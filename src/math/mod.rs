@@ -1,3 +1,9 @@
+use super::Scene;
+
+pub trait Integrate {
+    fn render(scene: &Scene);
+}
+
 /* hrend - A Toy Rendering Engine
  *
  * Author: Hughes Londergan <whlondergan@gmail.com>

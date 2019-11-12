@@ -2,6 +2,10 @@ pub mod test;
 
 mod math;
 
+pub struct Scene {
+
+}
+
 /* hrend - A Toy Rendering Engine
  *
  * Author: Hughes Londergan <whlondergan@gmail.com>
