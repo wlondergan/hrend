@@ -193,6 +193,40 @@ impl Vector3 {
         self.y *= recip;
         self.z *= recip;
     }
+
+    //FIXME: this probably doesn't work.
+    pub fn min_component(&self) -> f64 {
+        *[self.x, self.y, self.z].iter().enumerate().min_by(|x,y| x.partial_cmp(y).unwrap()).unwrap().1
+    }
+
+    pub fn max_component(&self) -> f64 {
+        *[self.x, self.y, self.z].iter().enumerate().max_by(|x,y| x.partial_cmp(y).unwrap()).unwrap().1
+    }
+
+    pub fn min_ind(&self) -> usize {
+        [self.x, self.y, self.z].iter().enumerate().min_by(|x,y| x.partial_cmp(y).unwrap()).unwrap().0
+    }
+
+    pub fn max_ind(&self) -> usize {
+        [self.x, self.y, self.z].iter().enumerate().max_by(|x,y| x.partial_cmp(y).unwrap()).unwrap().0
+    }
+
+    pub fn by_ind(&self, ind: usize) -> f64 {
+        match ind {
+            0 => self.x,
+            1 => self.y,
+            2 => self.z,
+            _ => panic!("Index out of range")
+        }
+    }
+
+    pub fn permute(&self, x: usize, y: usize, z: usize) -> Vector3 {
+        Vector3 {
+            x: self.by_ind(x),
+            y: self.by_ind(y),
+            z: self.by_ind(z)
+        }
+    }
 }
 
 impl ops::Add for Vector3 {
@@ -259,5 +293,64 @@ pub const ZERO_3: Vector3 = Vector3 {
     y: 0.,
     z: 0.
 };
+
+pub fn dot_2(a: &Vector2, b: &Vector2) -> f64 {
+    a.x * b.x + a.y * b.y
+}
+
+pub fn abs_dot_2(a: &Vector2, b: &Vector2) -> f64 {
+    dot_2(a, b).abs()
+}
+
+/// Computes the dot product of two 3-vectors.
+pub fn dot(a: &Vector3, b: &Vector3) -> f64 {
+    a.x * b.x + a.y * b.y + a.z * b.z
+}
+
+/// Takes the absolute value of the dot product of two vectors.
+pub fn abs_dot(a: &Vector3, b: &Vector3) -> f64 {
+    dot(a, b).abs()
+}
+
+/// Computes the cross product of two vectors.
+pub fn cross(a: &Vector3, b: &Vector3) -> Vector3 {
+    Vector3 {
+        x: a.y * b.z - a.z * b.y,
+        y: a.z * b.x - a.x * b.z,
+        z: a.x * b.y - a.y * b.x
+    }
+}
+
+pub fn norm_2(a: &Vector2) -> Vector2 {
+    a.div(a.length())
+}
+
+pub fn norm(a: &Vector3) -> Vector3 {
+    a.div(a.length())
+}
+
+///# Safety
+/// 
+/// There aren't really any issues with safety here, as long as you're okay with having these pointers rewritten afterwards.
+pub unsafe fn coord_sys(a: &Vector3, b: *mut Vector3, c: *mut Vector3) {
+    if a.x.abs() > a.y.abs() {
+        *b = Vector3::new(-a.z, 0., a.x).div(a.length())
+    }
+    else {
+        *b = Vector3::new(0., a.z, -a.y).div(a.length())
+    }
+    *c = cross(a, &*b);
+}
+
+/// A safer version of the previous example, except it allocates new vectors instead.
+pub fn safe_coord_sys(a: &Vector3) -> (Vector3, Vector3) {
+    let b = if a.x.abs() > a.y.abs() {
+        Vector3::new(-a.z, 0., a.x).div(a.length())
+    }
+    else {
+        Vector3::new(0., a.z, -a.y).div(a.length()) 
+    };
+    (b, cross(a, &b))
+}
 
 
