@@ -19,6 +19,7 @@
 use std::f64;
 use std::ops;
 use std::fmt;
+use super::normal::*;
 // TODO: add iteration to vector types
 
 /// Represents a vector in 2 dimensional space.
@@ -287,6 +288,10 @@ impl Vector3 {
             y: self.by_ind(y),
             z: self.by_ind(z)
         }
+    }
+
+    pub fn from_norm3(from: &Normal3) -> Vector3 {
+        Vector3::new(from.x, from.y, from.z)
     }
 }
 
