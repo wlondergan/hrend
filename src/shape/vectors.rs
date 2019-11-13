@@ -98,6 +98,13 @@ impl ops::SubAssign for Vector2 {
     }
 }
 
+impl ops::Neg for Vector2 {
+    type Output = Vector2;
+    fn neg(self) -> Vector2 {
+        Vector2::new(-self.x, -self.y)
+    }
+}
+
 impl fmt::Display for Vector2 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[{}, {}]", self.x, self.y)
@@ -208,6 +215,13 @@ impl ops::SubAssign for Vector3 {
         self.x -= other.x;
         self.y -= other.y;
         self.z -= other.z;
+    }
+}
+
+impl ops::Neg for Vector3 {
+    type Output = Vector3;
+    fn neg(self) -> Vector3 {
+        Vector3::new(-self.x, -self.y, -self.z)
     }
 }
 
