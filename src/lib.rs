@@ -2,6 +2,8 @@ pub mod test;
 
 mod math;
 
+pub mod shape;
+
 pub struct Scene {
 
 }
