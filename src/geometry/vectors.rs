@@ -26,7 +26,7 @@ use std::fmt;
 /// the user choose between `f64` and `f32`, which tends to complicate things unnecessarily for a toy renderer
 /// like this one.
 /// I have chosen to exclude the indexing operator included in `pbrt`. It doesn't seem important.
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Vector2 {
     pub x: f64,
     pub y: f64
@@ -140,7 +140,7 @@ pub const ZERO_2: Vector2 = Vector2 {
 
 /// Represents a vector in 3 dimensional space. See notes on `Vector2` for more information about the
 /// specific implementation.
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Vector3 {
     pub x: f64,
     pub y: f64,
@@ -149,6 +149,16 @@ pub struct Vector3 {
 
 impl Vector3 {
     /// makes a `Vector3`. Equivalent to just building it manually, but in more Java-y style.
+    /// ```
+    /// # use hrend::geometry::vectors::Vector3;
+    /// let x = Vector3::new(1., 1., 1.);
+    /// 
+    /// assert_eq!(x, Vector3 {
+    ///     x: 1.,
+    ///     y: 1.,
+    ///     z: 1.
+    /// });
+    /// ```
     pub fn new(x: f64, y: f64, z: f64) -> Vector3 {
         Vector3 {
             x,
@@ -158,35 +168,86 @@ impl Vector3 {
     }
 
     /// Determines whether any of the fields of this struct are `NaN`.
+    /// 
+    /// ```
+    /// # use hrend::geometry::vectors::Vector3;
+    /// # use std::f64;
+    /// assert!(Vector3::new(1., f64::NAN, 1.).has_nan());
+    /// ```
     pub fn has_nan(&self) -> bool {
         f64::is_nan(self.x) || f64::is_nan(self.y) || f64::is_nan(self.z)
     }
 
-    // Returns the length of this vector, squared.
+    /// Returns the length of this vector, squared.
+    /// 
+    /// ```
+    /// # use hrend::geometry::vectors::Vector3;
+    /// let x = Vector3::new(1., 1., 1.);
+    /// 
+    /// assert_eq!(x.length_sqr(), 3.);
+    /// ```
     pub fn length_sqr(&self) -> f64 {
         self.x*self.x + self.y*self.y + self.z * self.z
     }
 
-    // Returns the length of this vector. Expensive, because it uses a `sqrt` call, which isn't ideal.
+    /// Returns the length of this vector. Expensive, because it uses a `sqrt` call, which isn't ideal.
+    /// 
+    /// ```
+    /// # use hrend::geometry::vectors::Vector3;
+    /// let x = Vector3::new(2., 0., 0.);
+    /// 
+    /// assert_eq!(x.length(), 2.);
+    /// ```
     pub fn length(&self) -> f64 {
         f64::sqrt(self.length_sqr())
     }
 
+    /// Multiplies a vector by a scalar.
+    /// 
+    /// ```
+    /// # use hrend::geometry::vectors::Vector3;
+    /// let x = Vector3::new(1., 1., 1.);
+    /// 
+    /// assert_eq!(x.mult(2.), Vector3::new(2., 2., 2.))
+    /// ```
     pub fn mult(&self, by: f64) -> Vector3 {
         Vector3::new(self.x * by, self.y * by, self.z * by)
     }
 
+    /// Mutates a vector by multiplying it by a scalar.
+    /// 
+    /// ```
+    /// # use hrend::geometry::vectors::Vector3;
+    /// let mut x = Vector3::new(1., 1., 1.);
+    /// x.mult_mut(2.);
+    /// assert_eq!(x, Vector3::new(2., 2., 2.));
+    /// ```
     pub fn mult_mut(&mut self, by: f64) {
         self.x *= by;
         self.y *= by;
         self.z *= by;
     }
 
+    /// Divides a vector by a scalar. More expensive than multiplication.
+    /// 
+    /// ```
+    /// # use hrend::geometry::vectors::Vector3;
+    /// let x = Vector3::new(1., 1., 1.);
+    /// assert_eq!(x.div(2.), Vector3::new(0.5, 0.5, 0.5));
+    /// ```
     pub fn div(&self, by: f64) -> Vector3 {
         let recip = 1./by;
         Vector3::new(self.x * recip, self.y * recip, self.z * recip)
     }
 
+    /// Mutates a vector by dividing it by a scalar. More expensive than multiplication. 
+    /// 
+    /// ```
+    /// # use hrend::geometry::vectors::Vector3;
+    /// let mut x = Vector3::new(1., 1., 1.);
+    /// x.div_mut(2.);
+    /// assert_eq!(x, Vector3::new(0.5, 0.5, 0.5));
+    /// ```
     pub fn div_mut(&mut self, by: f64) {
         let recip = 1./by;
         self.x *= recip;
