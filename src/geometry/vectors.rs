@@ -19,6 +19,7 @@
 use std::f64;
 use std::ops;
 use std::fmt;
+// TODO: add iteration to vector types
 
 /// Represents a vector in 2 dimensional space.
 /// The fields of this struct are ``f64``, which is unlike `pbrt`'s approach. They have a runtime flag that lets
