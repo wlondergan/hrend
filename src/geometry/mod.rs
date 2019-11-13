@@ -22,5 +22,8 @@ pub mod vectors;
 /// Provides implementations for 2D and 3D points, similarly to vectors.
 pub mod points;
 
-/// Profides implementation for surface normals.
+/// Provides implementation for surface normals.
 pub mod normal;
+
+/// Provides implementation for rays.
+pub mod ray;
