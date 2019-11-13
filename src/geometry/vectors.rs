@@ -66,12 +66,14 @@ impl Vector2 {
     }
 
     pub fn div(&self, by: f64) -> Vector2 {
-        Vector2::new(self.x / by, self.y / by)
+        let recip = 1./by;
+        Vector2::new(self.x * recip, self.y * recip)
     }
 
     pub fn div_mut(&mut self, by: f64) {
-        self.x /= by;
-        self.y /= by;
+        let recip = 1./by;
+        self.x *= recip;
+        self.y *= recip; // floating point division is expensive.
     }
 }
 
@@ -181,13 +183,15 @@ impl Vector3 {
     }
 
     pub fn div(&self, by: f64) -> Vector3 {
-        Vector3::new(self.x / by, self.y / by, self.z / by)
+        let recip = 1./by;
+        Vector3::new(self.x * recip, self.y * recip, self.z * recip)
     }
 
     pub fn div_mut(&mut self, by: f64) {
-        self.x /= by;
-        self.y /= by;
-        self.z /= by;
+        let recip = 1./by;
+        self.x *= recip;
+        self.y *= recip;
+        self.z *= recip;
     }
 }
 
