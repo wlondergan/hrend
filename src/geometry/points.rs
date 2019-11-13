@@ -17,7 +17,6 @@
 */
 use std::f64;
 use std::fmt;
-use std::cmp;
 use super::vectors::*;
 
 /// Represents a point in 3D (Euclidean) space, with double precision floating points for each
