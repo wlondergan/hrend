@@ -2,7 +2,8 @@ pub mod test;
 
 mod math;
 
-pub mod shape;
+/// Defines various geometric structs and functions used to represent objects in 3-dimensional space.
+pub mod geometry;
 
 pub struct Scene {
 
