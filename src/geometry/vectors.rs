@@ -25,7 +25,6 @@ use std::fmt;
 /// The fields of this struct are ``f64``, which is unlike `pbrt`'s approach. They have a runtime flag that lets
 /// the user choose between `f64` and `f32`, which tends to complicate things unnecessarily for a toy renderer
 /// like this one.
-/// I have chosen to exclude the indexing operator included in `pbrt`. It doesn't seem important.
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Vector2 {
     pub x: f64,
@@ -149,10 +148,11 @@ pub struct Vector3 {
 
 impl Vector3 {
     /// makes a `Vector3`. Equivalent to just building it manually, but in more Java-y style.
+    /// 
+    /// #### Usage
     /// ```
     /// # use hrend::geometry::vectors::Vector3;
     /// let x = Vector3::new(1., 1., 1.);
-    /// 
     /// assert_eq!(x, Vector3 {
     ///     x: 1.,
     ///     y: 1.,
@@ -255,7 +255,7 @@ impl Vector3 {
         self.z *= recip;
     }
 
-    //FIXME: this probably doesn't work.
+    //TODO: this is wrong.
     pub fn min_component(&self) -> f64 {
         *[self.x, self.y, self.z].iter().enumerate().min_by(|x,y| x.partial_cmp(y).unwrap()).unwrap().1
     }
