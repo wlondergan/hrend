@@ -16,8 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// Provides implementations for both 2D and 3D vectors.
-pub mod vectors;
+ pub struct Point3 {
 
-/// Provides implementations for 2D and 3D points, similarly to vectors.
-pub mod points;
+ }
+
+ pub struct Point2 {
+     
+ }
