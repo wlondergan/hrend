@@ -63,25 +63,21 @@ impl Ray {
     }
 
     pub fn scale_diffs(&mut self, by: f64) {
-        unsafe {
-            let this = *(self as *mut Ray);
-
-
+        if let Some(diff) = &mut self.diff {
+            diff.rx_origin = diff.rx_origin.add_vec(&(diff.rx_origin - self.o)).mult(by);
+            diff.ry_origin = diff.ry_origin.add_vec(&(diff.rx_origin - self.o)).mult(by);
+            diff.rx_dir = self.d + (diff.rx_dir - self.d).mult(by);
+            diff.ry_dir = self.d + (diff.ry_dir - self.d).mult(by);
         }
     }
 
-}
-
-/*
-pub fn scale_diffs(mut r: Ray, by: f64) /*-> Ray*/ {
-
-    if let Some(diff) = r.diff {
-
+    pub fn is_differential(&self) -> bool {
+        self.diff.is_some()
     }
 }
-*/
 
 //TODO: make default ray
+//TODO: add NAN checking functions
 
 pub struct Differential {
     pub rx_origin: Point3,
