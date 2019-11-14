@@ -1,14 +1,3 @@
-pub mod test;
-
-mod math;
-
-/// Defines various geometric structs and functions used to represent objects in 3-dimensional space.
-pub mod geometry;
-
-pub struct Scene {
-
-}
-
 /* hrend - A Toy Rendering Engine
  *
  * Author: Hughes Londergan <whlondergan@gmail.com>
@@ -26,3 +15,14 @@ pub struct Scene {
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
+pub mod test;
+
+mod math;
+
+/// Defines various geometric structs and functions used to represent objects in 3-dimensional space.
+pub mod geometry;
+
+pub struct Scene {
+
+}
