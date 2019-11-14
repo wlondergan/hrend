@@ -171,6 +171,27 @@ impl Point2 {
     pub fn has_nan(&self) -> bool {
         f64::is_nan(self.x) || f64::is_nan(self.y)
     }
+
+    pub fn sub_vec(&self, other: &Vector2) -> Point2 {
+        Point2::new(self.x - other.x, self.y - other.y)
+    }
+
+    pub fn div(&self, by: f64) -> Point2 {
+        Point2 {
+            x: self.x / by,
+            y: self.y / by
+        }
+    }
+}
+
+impl std::ops::Sub for Point2 {
+    type Output = Vector2;
+    fn sub(self, other: Point2) -> Vector2 {
+        Vector2 {
+            x: self.x - other.x,
+            y: self.y - other.y
+        }
+    }
 }
 
 /// Linearly interpolates between the points.

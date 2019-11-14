@@ -27,3 +27,7 @@ pub mod normal;
 
 /// Provides implementation for rays.
 pub mod ray;
+
+pub fn lerp(t: f64, v1: f64, v2: f64) -> f64 {
+    (1. - t) * v1 + t * v2
+}
