@@ -39,7 +39,9 @@ impl Normal3 {
     }
 
     pub fn mult_mut(&mut self, by: f64) {
-
+        self.x *= by;
+        self.y *= by;
+        self.z *= by;
     }
 
     // TODO make this more efficient
