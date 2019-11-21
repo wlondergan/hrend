@@ -195,7 +195,7 @@ impl Bounds3 {
     }
 
     pub fn by_ind(&self, ind: usize) -> Point3 {
-        assert!(0 <= ind && 1 >= ind);
+        assert!(1 >= ind); // index must be one or two
         if ind == 0 {
             self.p_min
         } else {
@@ -258,8 +258,7 @@ impl Bounds3 {
     }
     */
 
-    
-    pub fn bound_sphere(&self, c: &Point3, rad: f64) -> (Point3, f64) {
+    pub fn bound_sphere(&self, c: &Point3) -> (Point3, f64) {
         (
             (self.p_min + self.p_max).div(2.),
             if self.inside(c) {self.p_max.dist(c)} else {0.}
