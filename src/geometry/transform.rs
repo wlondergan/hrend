@@ -16,11 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use super::vectors::Vector3;
+
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Transform {
     m: Matrix4x4,
     m_inv: Matrix4x4
 }
 
+#[allow(dead_code)]
 impl Transform {
     pub fn new() -> Transform {
         Transform {
@@ -28,10 +32,78 @@ impl Transform {
             m_inv: IDENTITY
         }
     }
+
+    pub fn from_mat(m: [[f64; 4]; 4]) -> Transform {
+        let mat = Matrix4x4::new(m);
+        Transform {
+            m: mat,
+            m_inv: mat.inverse()
+        }
+    }
+
+    pub fn from_parts(m: [[f64; 4]; 4], m_inv: [[f64; 4]; 4]) -> Transform {
+        Transform {m: Matrix4x4::new(m), m_inv: Matrix4x4::new(m_inv)}
+    }
+
+    pub fn inverse(&self) -> Transform {
+        Transform::from_matrices(&self.m_inv, &self.m)
+    }
+
+    pub fn transpose(&self) -> Transform {
+        Transform::from_matrices(&self.m.transpose(), &self.m_inv.transpose())
+    }
+
+    pub fn is_identity(&self) -> bool {
+        self.m == IDENTITY
+    }
+
+    pub fn translate(delta: &Vector3) -> Transform {
+        let m = [
+                [1., 0., 0., delta.x],
+                [0., 1., 0., delta.y], 
+                [0., 0., 1., delta.z],
+                [0., 0., 0., 1.]
+                ];
+        let m_inv = [
+                    [1., 0., 0., -delta.x],
+                    [0., 1., 0., -delta.y], 
+                    [0., 0., 1., -delta.z],
+                    [0., 0., 0., 1.]
+                    ];
+        Transform::from_parts(m, m_inv)
+    }
+
+    pub fn scale(x: f64, y: f64, z: f64) -> Transform {
+        let m = [
+                [x, 0., 0., 0.],
+                [0., y, 0., 0.], 
+                [0., 0., z, 0.],
+                [0., 0., 0., 1.]
+                ];
+        let m_inv = [
+                    [1./x, 0., 0., 0.],
+                    [0., 1./y, 0., 0.], 
+                    [0., 0., 1./z, 0.],
+                    [0., 0., 0., 1.]
+                    ];
+        Transform::from_parts(m, m_inv)
+    }
+
+    /* TODO impl
+    pub fn has_scale(&self) -> bool {
+
+    }
+    */
+
+    fn from_matrices(m: &Matrix4x4, m_inv: &Matrix4x4) -> Transform {
+        Transform {m: *m, m_inv: *m_inv}
+    }
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 /// Represents a 4x4 matrix and some of the useful associated operations that can be performed on one.
+/// 
+/// TODO decide whether or not this gets to be public
 struct Matrix4x4 {
     pub m: [[f64; 4]; 4],
 }
@@ -74,6 +146,8 @@ impl Matrix4x4 {
     /// Computes the inverse of the matrix. Currently uses stable Gauss-Jordan elimination, via the method used in `pbrt`.
     /// 
     /// TODO: reimplement this in a better manner
+    /// 
+    /// TODO: fix this function
     /// #### Panics 
     /// * if the matrix is not invertible
     /// * if the matrix is singular (these are equivalent)
