@@ -31,6 +31,11 @@ pub mod ray;
 /// Provides implementation for square bounds in 2 and 3D.
 pub mod bounds;
 
+/// Provides implementation for linear transformations on homogenous coordinates.
+pub mod transform;
+
+/// Linearly interpolates on a line given a point `t` along the line to find and points 
+///`v1` and `v2` defining the line segment.
 pub fn lerp(t: f64, v1: f64, v2: f64) -> f64 {
     (1. - t) * v1 + t * v2
 }
