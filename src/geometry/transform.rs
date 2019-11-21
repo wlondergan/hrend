@@ -16,7 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::vectors::Vector3;
+use super::vectors::*;
+use super::points::*;
+use super::ray::*;
+use super::normal::*;
+use super::bounds::*;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Transform {
@@ -45,6 +49,10 @@ impl Transform {
         Transform {m: Matrix4x4::new(m), m_inv: Matrix4x4::new(m_inv)}
     }
 
+    fn from_matrices(m: &Matrix4x4, m_inv: &Matrix4x4) -> Transform {
+        Transform {m: *m, m_inv: *m_inv}
+    }
+
     pub fn inverse(&self) -> Transform {
         Transform::from_matrices(&self.m_inv, &self.m)
     }
@@ -56,6 +64,24 @@ impl Transform {
     pub fn is_identity(&self) -> bool {
         self.m == IDENTITY
     }
+
+    /* TODO impl
+    pub fn trans_point(&Point3) -> Point3 {
+
+    }
+
+    pub fn trans_vector(&Vector3) -> Vector3 {
+
+    }
+
+    pub fn trans_norm(&Normal3) -> Normal3 {
+
+    }
+
+    pub fn trans_bounds(&Bounds3) -> Bounds3 {
+
+    }
+    */
 
     pub fn translate(delta: &Vector3) -> Transform {
         let m = [
@@ -89,15 +115,13 @@ impl Transform {
         Transform::from_parts(m, m_inv)
     }
 
-    /* TODO impl
+    /*
+    /// Determines whether or not a given transformation has a scaling term in it.
     pub fn has_scale(&self) -> bool {
-
+        let a = 
     }
     */
 
-    fn from_matrices(m: &Matrix4x4, m_inv: &Matrix4x4) -> Transform {
-        Transform {m: *m, m_inv: *m_inv}
-    }
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
