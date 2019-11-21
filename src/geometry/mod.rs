@@ -28,6 +28,9 @@ pub mod normal;
 /// Provides implementation for rays.
 pub mod ray;
 
+/// Provides implementation for square bounds in 2 and 3D.
+pub mod bounds;
+
 pub fn lerp(t: f64, v1: f64, v2: f64) -> f64 {
     (1. - t) * v1 + t * v2
 }

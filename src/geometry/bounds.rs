@@ -19,6 +19,9 @@ use super::points::*;
 use super::vectors::*;
 use std::f64;
 
+//TODO implement iteration over bounds maximum extents 
+//http://www.pbr-book.org/3ed-2018/Geometry_and_Transformations/Bounding_Boxes.html#Bounds3::Inside
+
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Bounds2 {
     pub p_min: Point2,
@@ -28,8 +31,8 @@ pub struct Bounds2 {
 impl Bounds2 {
     pub fn new(p1: &Point2, p2: &Point2) -> Bounds2 {
         Bounds2 {
-            p_min: p1,
-            p_max: p2
+            p_min: *p1,
+            p_max: *p2
         }
     }
 
@@ -38,14 +41,14 @@ impl Bounds2 {
         let max = f64::MAX;
         Bounds2 {
             p_min: Point2::new(max, max),
-            p_max: Point2::new(min, min);
+            p_max: Point2::new(min, min)
         }
     }
 
-    pub fn from_point(p: &Point2) {
+    pub fn from_point(p: &Point2) -> Bounds2 {
         Bounds2 {
-            p_min: p,
-            p_max: p
+            p_min: *p,
+            p_max: *p
         }
     }
 
@@ -60,14 +63,14 @@ impl Bounds2 {
 
     pub fn max_extent(&self) -> isize {
         let d = self.diagonal();
-        if diag.x > diag.y {
+        if d.x > d.y {
             0
         } else {
             1
         }
     }
 
-    pub fn by_ind(&self, ind: usize) {
+    pub fn by_ind(&self, ind: usize) -> Point2{
         assert!(0 <= ind && 1 >= ind);
         if ind == 0 {
             self.p_min
@@ -84,7 +87,7 @@ impl Bounds2 {
     }
 
     pub fn offset(&self, p: &Point2) -> Vector2 {
-        let mut o = p - self.p_min;
+        let mut o = Vector2::new(p.x - self.p_min.x, p.y - self.p_min.y); // because normal subtraction is just too easy
         if self.p_max.x > self.p_min.x {
             o.x /= self.p_max.x - self.p_min.x;
         }
@@ -94,25 +97,173 @@ impl Bounds2 {
         o
     }
 
+    pub fn inside(&self, p: &Point2) -> bool {
+        p.x >= self.p_min.x && p.x <= self.p_max.x &&
+        p.y >= self.p_min.y && p.y <= self.p_max.y
+    }
+
+    /// Same thing as `inside`, except it doesn't consider things on the upper bound to be inside.
+    /// Not that useful.
+    pub fn inside_excl(&self, p: &Point2) -> bool {
+        p.x >= self.p_min.x && p.x < self.p_max.x &&
+        p.y >= self.p_min.y && p.y < self.p_max.y
+    }
+
+    /*
+    pub fn mut_bound_sphere(&self, c: &mut Point2, rad: &mut f64) {
+        c = &mut (self.p_min + self.p_max).div(2.);
+        rad = if inside(c, &mut self) {
+            distance(c, self.p_max)
+        } else { 0 }
+    }
+    */
+
+    pub fn bound_sphere(&self, c: &mut Point2, rad: &mut f64) -> (Point2, f64) {
+        (
+            (self.p_min + self.p_max).div(2.), 
+            if self.inside(c) {c.dist(&self.p_max)} else {0.}
+        )
+    }
+
+    pub fn overlaps(&self, other: &Bounds2) -> bool {
+        self.p_max.x >= other.p_min.x && self.p_min.x <= other.p_max.x &&
+        self.p_max.y >= other.p_min.y && self.p_min.y <= other.p_min.y
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct Bounds3 {
+    pub p_min: Point3,
+    pub p_max: Point3
+}
+
+impl Bounds3 {
+    pub fn new(p1: &Point3, p2: &Point3) -> Bounds3 {
+        Bounds3 {
+            p_min: *p1,
+            p_max: *p2
+        }
+    }
+
+    pub fn default() -> Bounds3 {
+        let min = f64::MIN;
+        let max = f64::MAX;
+        Bounds3 {
+            p_min: Point3::new(max, max, max),
+            p_max: Point3::new(min, min, min)
+        }
+    }
+
+    pub fn from_point(p: &Point3) -> Bounds3 {
+        Bounds3 {
+            p_min: *p,
+            p_max: *p
+        }
+    }
+
+    pub fn diagonal(&self) -> Vector3 {
+        self.p_max - self.p_min
+    }
+
+    pub fn surface_area(&self) -> f64 {
+        let d = self.diagonal();
+        2. * (d.x * d.y + d.x * d.z + d.y * d.z)
+    }
+
+    pub fn volume(&self) -> f64 {
+        let d = self.diagonal();
+        d.x * d.y * d.z
+    }
+
+    pub fn corner(&self, corner: usize) -> Point3 {
+        Point3 {
+            x: self.by_ind(corner & 1).x,
+            y: self.by_ind(if (corner & 2) != 0 {1} else {0}).y,
+            z: self.by_ind(if (corner & 4) != 0 {1} else {0}).z
+        }
+    }
+
+    pub fn max_extent(&self) -> isize {
+        let d = self.diagonal();
+        if d.x > d.y && d.x > d.z{
+            0
+        } else if d.y > d.z {
+            1
+        } else {
+            2 
+        }
+    }
+
+    pub fn by_ind(&self, ind: usize) -> Point3 {
+        assert!(0 <= ind && 1 >= ind);
+        if ind == 0 {
+            self.p_min
+        } else {
+            self.p_max
+        }
+    }
+
+    pub fn lerp(&self, t: &Point3) -> Point3 {
+        Point3::new(
+            super::lerp(t.x, self.p_min.x, self.p_max.x),
+            super::lerp(t.y, self.p_min.y, self.p_max.y),
+            super::lerp(t.z, self.p_min.z, self.p_max.z)
+        )
+    }
+
+    pub fn offset(&self, p: &Point3) -> Vector3 {
+        let mut o = Vector3 {
+            x: p.x - self.p_min.x,
+            y: p.y - self.p_min.y,
+            z: p.z - self.p_min.z
+        };
+        if self.p_max.x > self.p_min.x {
+            o.x /= self.p_max.x - self.p_min.x;
+        }
+        if self.p_max.y > self.p_min.y {
+            o.y /= self.p_max.y - self.p_min.y;
+        }
+        o
+    }
+
+    pub fn inside(&self, p: &Point3) -> bool {
+        p.x >= self.p_min.x && p.x <= self.p_max.x &&
+        p.y >= self.p_min.y && p.y <= self.p_max.y &&
+        p.z >= self.p_min.z && p.z <= self.p_min.z
+    }
+
+    pub fn overlaps(&self, other: &Bounds3) -> bool {
+        self.p_max.x >= other.p_min.x && self.p_min.x <= other.p_min.x &&
+        self.p_max.y >= other.p_min.y && self.p_min.y <= other.p_min.y &&
+        self.p_max.z >= other.p_min.z && self.p_min.z <= other.p_min.z
+    }
+
+    pub fn expand(&self, by: f64) -> Bounds3 {
+        Bounds3 {
+            p_min: self.p_min.sub_vec(&Vector3::new(by, by, by)),
+            p_max: self.p_max.add_vec(&Vector3::new(by, by, by))
+        }
+    }
+
+    pub fn expand_mut(&mut self, by: f64) {
+
+    }
+
+    /*
     pub fn mut_bound_sphere(&self, c: &mut Point2, rad: &mut f64) {
         c = (self.p_min + self.p_max).div(2.);
         rad = if inside(c, &mut self) {
             distance(c, self.p_max)
         } else { 0 }
     }
-
-    /* TODO implement
-    pub fn bound_sphere(&self) -> (Point2, f64) {
-
-    }
     */
-}
 
-pub struct Bounds3 {
-    pub pMin: Point3,
-    pub pMax: Point3
-}
-
-impl Bounds3 {
-
+    
+    pub fn bound_sphere(&self, c: &Point3, rad: f64) -> (Point3, f64) {
+        (
+            (self.p_min + self.p_max).div(2.),
+            if self.inside(c) {self.p_max.dist(c)} else {0.}
+        )
+    }
+    
 }

@@ -80,6 +80,22 @@ impl Point3 {
         self.z *= other;
     }
 
+    pub fn div(&self, other: f64) -> Point3 {
+        let a = 1./other;
+        Point3 {
+            x: self.x * a,
+            y: self.y * a,
+            z: self.z * a
+        }
+    }
+
+    pub fn div_mut(&mut self, other: f64) {
+        let a = 1./other;
+        self.x /= a;
+        self.y /= a;
+        self.z /= a;
+    }
+
     pub fn floor(&self) -> Point3 {
         Point3 {
             x: self.x.floor(),
@@ -182,6 +198,14 @@ impl Point2 {
             y: self.y / by
         }
     }
+
+    pub fn dist(&self, b: &Point2) -> f64 {
+        (*self - *b).length()
+    }
+
+    pub fn dist_sqr(&self, b: &Point2) -> f64 {
+        (*self - *b).length_sqr()
+    }
 }
 
 impl std::ops::Sub for Point2 {
@@ -190,6 +214,16 @@ impl std::ops::Sub for Point2 {
         Vector2 {
             x: self.x - other.x,
             y: self.y - other.y
+        }
+    }
+}
+
+impl std::ops::Add for Point2 {
+    type Output = Point2;
+    fn add(self, other: Point2) -> Point2 {
+        Point2 {
+            x: self.x + other.x,
+            y: self.y + other.y
         }
     }
 }

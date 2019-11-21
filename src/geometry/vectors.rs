@@ -32,7 +32,7 @@ pub struct Vector2 {
     pub y: f64
 }
 
-impl Vector2 {
+impl Vector2  {
     /// makes a `Vector2`. Equivalent to just building it manually, but in more Java-y style.
     pub fn new(x: f64, y: f64) -> Vector2 {
         Vector2 {
