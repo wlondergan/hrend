@@ -16,7 +16,21 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#[derive(Copy, Clone, PartialEq)]
+pub struct Transform {
+    m: Matrix4x4,
+    m_inv: Matrix4x4
+}
+
+impl Transform {
+    pub fn new() -> Transform {
+        Transform {
+            m: IDENTITY,
+            m_inv: IDENTITY
+        }
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Debug)]
 /// Represents a 4x4 matrix and some of the useful associated operations that can be performed on one.
 struct Matrix4x4 {
     pub m: [[f64; 4]; 4],
@@ -57,11 +71,90 @@ impl Matrix4x4 {
         }
     }
 
-    /* TODO implement this (inverse code below)
+    /// Computes the inverse of the matrix. Currently uses stable Gauss-Jordan elimination, via the method used in `pbrt`.
+    /// 
+    /// TODO: reimplement this in a better manner
+    /// #### Panics 
+    /// * if the matrix is not invertible
+    /// * if the matrix is singular (these are equivalent)
     pub fn inverse(&self) -> Matrix4x4 {
+        let mut indxc: [usize; 4] = [0; 4];
+        let mut indxr: [usize; 4] = [0; 4];
 
+        let mut ipiv: [usize; 4] = [0, 0, 0, 0];
+        let mut minv = [[0.; 4]; 4];
+
+        minv.copy_from_slice(&self.m);
+
+        for i in 0..4 {
+            let mut i_row = 0;
+            let mut i_col = 0;
+
+            let mut big = 0.;
+            // Choose pivot
+            for j in 0..4 {
+                if ipiv[j] != 1 {
+                    for k in 0..4 {
+                        if ipiv[k] == 0 {
+                            if (minv[j][k]).abs() >= big {
+                                big = minv[j][k];
+                                i_row = j;
+                                i_col = k;
+                            }
+                        } else if ipiv[k] > 1 {
+                            panic!("Singular matrix found while trying to invert");
+                        }
+                    }
+                }
+            }
+
+            ipiv[i_col] += 1;
+            // Swap rows _irow_ and _icol_ for pivot
+            if i_row != i_col {
+                for k in 0..4 {
+                    // swap minv at [i_row] [k] and [i_col] [k]
+                    let swap = minv[i_row][k];
+                    minv[i_row][k] = minv[i_col][k];
+                    minv[i_col][k] = swap;
+                }
+            }
+            indxr[i] = i_row;
+            indxc[i] = i_col;
+            if minv[i_col][i_col] == 0. {
+                panic!("Singular matrix found while trying to invert");
+            }
+
+            // Put this row's leading term in RREF
+            let pivinv = 1. / minv[i_col][i_col];
+            minv[i_col][i_col] = 1.;
+            for j in 0..4 {
+                minv[i_col][j] *= pivinv;
+            } 
+
+            // Take current row and subtract from other rows to create zeroes
+            for j in 0..4 {
+                if j != i_col {
+                    let save = minv[j][i_col];
+                    minv[j][i_col] = 0.;
+                    for k in 0..4 {
+                        minv[j][k] -= minv[i_col][k] * save;
+                    } 
+                }
+            }
+        }
+        // Swap columns to reflect permutation
+        for j in (0..3).rev() {
+            if indxr[j] != indxc[j] {
+                for k in 0..4 {
+                    // swap minv[k][indxr[j]] and minv[k][indxc[j]]
+                    let swap = minv[k][indxr[j]];
+                    minv[j][indxr[j]] = minv[k][indxc[j]];
+                    minv[k][indxc[j]] = swap;
+                }
+            }
+        }
+        Matrix4x4::new(minv)
     }
-    */
 
     /* TODO implement?
     pub fn write_to_file
@@ -83,6 +176,47 @@ impl std::ops::Mul for Matrix4x4 {
         }
         out
     }
+}
+
+#[cfg(test)]
+#[allow(dead_code)]
+mod test {
+    use super::*;
+    
+    #[test]
+    fn test_inv_identity() {
+        assert_eq!(IDENTITY, IDENTITY.inverse());
+    }
+
+    #[test]
+    fn test_inv_complicated() { // Got this one by calculating it by hand.
+        let a = Matrix4x4 {
+            m: [[1., 2., 2., 1.], 
+                [1., 1., 1., 2.], 
+                [-1., 1., -1., 4.], 
+                [0., 1., 1., 1.]]
+        }.inverse();
+
+        let a_inv = Matrix4x4 {
+            m: [[0.5, 0.5, 0., -1.5], 
+                [1.5, -1., 0.5, -1.5], 
+                [-1., 0.5, -0.5, 2.], 
+                [-0.5, 0.5, 0., 0.5]]
+        };
+
+        let margin = 0.0000001;
+
+        let mut inv_correct = true;
+        for i in 0..4 {
+            for j in 0..4 {
+                if a.m[i][j] - a_inv.m[i][j] > margin {
+                    inv_correct = false;
+                }
+            }
+        }
+        assert!(inv_correct);
+    }
+    
 }
 
 /* This is pbrt's implementation of 4x4 matrix inverse calculation.
