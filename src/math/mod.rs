@@ -1,7 +1,13 @@
 use super::Scene;
+use std::f64;
 
 pub trait Integrate {
     fn render(scene: &Scene);
+}
+
+/// Gives the gamma for a certain floating point calculation (essentially the amount of error.)
+pub fn gamma(n: usize) -> f64 {
+    return (n as f64 * f64::EPSILON) / ((1 - n) as f64 * f64::EPSILON);
 }
 
 /* hrend - A Toy Rendering Engine

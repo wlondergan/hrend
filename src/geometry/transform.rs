@@ -97,16 +97,37 @@ impl Transform {
         }
     }
 
-    /* TODO implement
     pub fn trans_ray(&self, r: &Ray) -> Ray {
+        // If the ray in question is differential, then we handle it here
         if r.is_differential() {
-            self.trans_ray_diff(r)
+            return self.trans_ray_diff(r); //must explicitly return because the function continues
         }
-
-
+        let o_err: Vector3;
+        //fix  let o = 
 
     }
 
+    /// Performs a transformation on the given point and returns it and the computed error (in vec form).
+    pub fn trans_pt_with_err(&self, p: &Point3) -> (Point3, Vector3) {
+        // compute trans on point
+        let xp = (self.m.m[0][0] * p.x + self.m.m[0][1] * p.y) + (self.m.m[0][2] * p.z + self.m.m[0][3]);
+        let yp = (self.m.m[1][0] * p.x + self.m.m[1][1] * p.y) + (self.m.m[1][2] * p.z + self.m.m[1][3]);
+        let zp = (self.m.m[2][0] * p.x + self.m.m[2][1] * p.y) + (self.m.m[2][2] * p.z + self.m.m[2][3]);
+        let wp = (self.m.m[3][0] * p.x + self.m.m[3][1] * p.y) + (self.m.m[3][2] * p.z + self.m.m[3][3]);
+
+        // compute err for point
+        let x_sum = (self.m.m[0][0] * p.x).abs() + (self.m.m[0][1] * p.x).abs() + (self.m.m[0][2] * p.x).abs() + self.m.m[0][3].abs();
+        let y_sum = (self.m.m[1][0] * p.x).abs() + (self.m.m[1][1] * p.x).abs() + (self.m.m[1][2] * p.x).abs() + self.m.m[1][3].abs();
+        let z_sum = (self.m.m[2][0] * p.x).abs() + (self.m.m[2][1] * p.x).abs() + (self.m.m[2][2] * p.x).abs() + self.m.m[2][3].abs();
+
+        assert!(wp != 0.);
+        (if wp == 1. {Point3::new(xp, yp, zp)} 
+        else {Point3::new(xp, yp, zp).div(wp)}, 
+        Vector3::new(x_sum, y_sum, z_sum).mult(crate::math::gamma(3)))
+    }
+
+    /// Performs a transformation on a ray with a guaranteed differential.
+    /// This guarantee allows this function to straight up force unwrap the differential and perform operations on it.
     fn trans_ray_diff(&self, r: &Ray) -> Ray {
 
     }
