@@ -203,6 +203,10 @@ impl Vector3 {
         f64::sqrt(self.length_sqr())
     }
 
+    pub fn abs(&self) -> Vector3 {
+        Vector3::new(self.x.abs(), self.y.abs(), self.z.abs())
+    }
+
     /// Multiplies a vector by a scalar.
     /// 
     /// ```

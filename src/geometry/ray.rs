@@ -78,7 +78,7 @@ impl Ray {
 
 //TODO: make default ray
 //TODO: add NAN checking functions
-
+#[derive(Copy, Clone)]
 pub struct Differential {
     pub rx_origin: Point3,
     pub ry_origin: Point3,

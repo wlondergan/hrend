@@ -1,15 +1,3 @@
-use super::Scene;
-use std::f64;
-
-pub trait Integrate {
-    fn render(scene: &Scene);
-}
-
-/// Gives the gamma for a certain floating point calculation (essentially the amount of error.)
-pub fn gamma(n: usize) -> f64 {
-    return (n as f64 * f64::EPSILON) / ((1 - n) as f64 * f64::EPSILON);
-}
-
 /* hrend - A Toy Rendering Engine
  *
  * Author: Hughes Londergan <whlondergan@gmail.com>
@@ -27,3 +15,17 @@ pub fn gamma(n: usize) -> f64 {
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+use super::Scene;
+use std::f64;
+
+/// There are various implementations of integrators (Whitted, &c). This trait allows implementation
+/// of different complexities of integration, so that the actual renderer calculations can be replaced 
+/// with modular code easily.
+pub trait Integrate {
+    fn render(scene: &Scene);
+}
+
+/// Gives the gamma for a certain floating point calculation (essentially the amount of error.)
+pub fn gamma(n: usize) -> f64 {
+    return (n as f64 * f64::EPSILON) / ((1 - n) as f64 * f64::EPSILON);
+}

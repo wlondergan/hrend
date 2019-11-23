@@ -21,6 +21,7 @@ use super::points::*;
 use super::ray::*;
 use super::normal::*;
 use super::bounds::*;
+use crate::math::gamma;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Transform {
@@ -89,22 +90,51 @@ impl Transform {
         }
     }
 
+    /// Transforms a vector and returns the error of the transformation.
+    pub fn trans_vec_with_err(&self, v: &Vector3) -> (Vector3, Vector3) {
+        let v_err = Vector3 {
+            x: gamma(3) * (self.m.m[0][0] * v.x) + (self.m.m[0][1] * v.y) + (self.m.m[0][2] * v.z),
+            y: gamma(3) * (self.m.m[1][0] * v.x) + (self.m.m[1][1] * v.y) + (self.m.m[1][2] * v.z),
+            z: gamma(3) * (self.m.m[2][0] * v.x) + (self.m.m[2][1] * v.y) + (self.m.m[2][2] * v.z),
+        };
+
+        let t = Vector3 {
+            x: self.m.m[0][0] * v.x + self.m.m[0][1] * v.y + self.m.m[0][2] * v.z,
+            y: self.m.m[1][0] * v.x + self.m.m[1][1] * v.y + self.m.m[1][2] * v.z,
+            z: self.m.m[2][0] * v.x + self.m.m[2][1] * v.y + self.m.m[2][2] * v.z,
+        };
+
+        (t, v_err)
+    }
+
+    /// Performs a transformation on a vector, given the vector and error already existing in the vector.
+    pub fn trans_vec_from_err(self, v: &Vector3, v_err: &Vector3) -> (Vector3, Vector3) {
+        let abs_err = Vector3 {
+            x: (gamma(3) + 1.) * (self.m.m[0][0].abs() * v_err.x + self.m.m[0][1] * v_err.y + self.m.m[0][1] * v_err.z) + 
+                gamma(3) * self.m.m[0][0] * v.x + self.m.m[0][1].abs() * v.y + self.m.m[0][2].abs() * v.z,
+
+            y: (gamma(3) + 1.) * (self.m.m[1][0].abs() * v_err.x + self.m.m[1][1] * v_err.y + self.m.m[1][1] * v_err.z) + 
+            gamma(3) * self.m.m[0][0] * v.x + self.m.m[0][1].abs() * v.y + self.m.m[0][2].abs() * v.z,
+            
+            z: (gamma(3) + 1.) * (self.m.m[2][0].abs() * v_err.x + self.m.m[2][1] * v_err.y + self.m.m[2][1] * v_err.z) + 
+            gamma(3) * self.m.m[2][0] * v.x + self.m.m[2][1].abs() * v.y + self.m.m[2][2].abs() * v.z,
+        };
+
+        let t = Vector3 {
+            x: self.m.m[0][0] * v.x + self.m.m[0][1] * v.y + self.m.m[0][2] * v.z,
+            y: self.m.m[1][0] * v.x + self.m.m[1][1] * v.y + self.m.m[1][2] * v.z,
+            z: self.m.m[2][0] * v.x + self.m.m[2][1] * v.y + self.m.m[2][2] * v.z,
+        };
+
+        (t, abs_err)
+    }
+
     pub fn trans_norm(&self, n: &Normal3) -> Normal3 {
         Normal3 {
             x: self.m.m[0][0] * n.x + self.m.m[1][0] * n.y + self.m.m[2][0] * n.z,
             y: self.m.m[0][1] * n.x + self.m.m[1][1] * n.y + self.m.m[2][1] * n.z,
             z: self.m.m[0][2] * n.x + self.m.m[1][2] * n.y + self.m.m[2][2] * n.z
         }
-    }
-
-    pub fn trans_ray(&self, r: &Ray) -> Ray {
-        // If the ray in question is differential, then we handle it here
-        if r.is_differential() {
-            return self.trans_ray_diff(r); //must explicitly return because the function continues
-        }
-        let o_err: Vector3;
-        //fix  let o = 
-
     }
 
     /// Performs a transformation on the given point and returns it and the computed error (in vec form).
@@ -123,15 +153,113 @@ impl Transform {
         assert!(wp != 0.);
         (if wp == 1. {Point3::new(xp, yp, zp)} 
         else {Point3::new(xp, yp, zp).div(wp)}, 
-        Vector3::new(x_sum, y_sum, z_sum).mult(crate::math::gamma(3)))
+        Vector3::new(x_sum, y_sum, z_sum).mult(gamma(3)))
+    }
+
+    /// Performs a transformation on the given point, with inputted error and returns the transformation plus the absolute error.
+    pub fn trans_pt_from_err(&self, p: &Point3, p_err: &Vector3) -> (Point3, Vector3) {
+        // compute trans on point
+        let xp = (self.m.m[0][0] * p.x + self.m.m[0][1] * p.y) + (self.m.m[0][2] * p.z + self.m.m[0][3]);
+        let yp = (self.m.m[1][0] * p.x + self.m.m[1][1] * p.y) + (self.m.m[1][2] * p.z + self.m.m[1][3]);
+        let zp = (self.m.m[2][0] * p.x + self.m.m[2][1] * p.y) + (self.m.m[2][2] * p.z + self.m.m[2][3]);
+        let wp = (self.m.m[3][0] * p.x + self.m.m[3][1] * p.y) + (self.m.m[3][2] * p.z + self.m.m[3][3]);
+
+        let abs_err = Vector3 {
+            x: (gamma(3) + 1.) * ((self.m.m[0][0]).abs() * p_err.x + self.m.m[0][1].abs() * p_err.y + self.m.m[0][0] * p_err.z) + 
+               (gamma(3) * (self.m.m[0][0].abs() * p.x + self.m.m[0][1] * p.y + self.m.m[0][2] * p.z + self.m.m[0][3].abs())),
+
+            y: (gamma(3) + 1.) * ((self.m.m[1][0]).abs() * p_err.x + self.m.m[1][1].abs() * p_err.y + self.m.m[1][0] * p_err.z) + 
+               (gamma(3) * (self.m.m[1][0].abs() * p.x + self.m.m[1][1] * p.y + self.m.m[1][2] * p.z + self.m.m[1][3].abs())),
+            
+            z: (gamma(3) + 1.) * ((self.m.m[2][0]).abs() * p_err.x + self.m.m[2][1].abs() * p_err.y + self.m.m[2][0] * p_err.z) + 
+               (gamma(3) * (self.m.m[2][0].abs() * p.x + self.m.m[2][1] * p.y + self.m.m[2][2] * p.z + self.m.m[2][3].abs())),
+        };
+
+        assert!(wp != 0.); //TODO write a function for this that checks within a range
+        
+        (
+            if wp == 1. {
+                Point3::new(xp, yp, zp)
+            } else {
+                Point3::new(xp, yp, zp).div(wp)
+            },
+            abs_err
+        )
+
+    }
+
+    pub fn trans_ray(&self, r: &Ray) -> Ray {
+        // If the ray in question is differential, then we handle it here
+        if r.is_differential() {
+            return self.trans_ray_diff(r); //must explicitly return because the function continues
+        }
+        let (o, o_err) = self.trans_pt_with_err(&r.o);
+        let d = self.trans_vector(&r.d);
+
+        let len_sqr = d.length_sqr();
+        let t_max = r.t_max.get(); //make a copy of the t_max because it's only like 64 bytes and we'll be copying it anyways
+
+        if len_sqr > 0. {
+            let dt = dot(&d.abs(), &o_err) / len_sqr;
+        }
+
+        Ray::new(&o, &d, t_max, r.time /* ,TODO implement mediums r.medium*/)
     }
 
     /// Performs a transformation on a ray with a guaranteed differential.
     /// This guarantee allows this function to straight up force unwrap the differential and perform operations on it.
     fn trans_ray_diff(&self, r: &Ray) -> Ray {
 
+        //apply a transformation to everything except the diff element
+        let mut t = self.trans_ray(&Ray::new(&r.o, &r.d, r.t_max.get(), r.time));
+
+        //TODO make sure we actually need the clone call
+        let rd = r.diff.unwrap();
+
+        let d = Differential { 
+            rx_origin: self.trans_point(&rd.rx_origin),
+            ry_origin: self.trans_point(&rd.ry_origin),
+            rx_dir: self.trans_vector(&rd.rx_dir),
+            ry_dir: self.trans_vector(&rd.ry_dir)
+        };
+
+        t.diff = Some(d);
+        t
     }
-    */
+
+    /// Computes the transformation on the given ray, computing the error for
+    /// the origin transform and vector transforms, respectively.
+    pub fn trans_ray_with_err(&self, r: &Ray) -> (Ray, Vector3, Vector3) {
+        let (mut o, o_err) = self.trans_pt_with_err(&r.o);
+        let (d, d_err) = self.trans_vec_with_err(&r.d);
+        let t_max = r.t_max.get();
+        let len_sqr = d.length_sqr();
+
+        if len_sqr > 0. {
+            let dt = dot(&d.abs(), &o_err) / len_sqr;
+            o.add_vec_mut(&d.mult(dt));
+            //t_max -= dt;
+        }
+
+        (Ray::new(&o, &d, t_max, r.time/*, r.medium*/), o_err, d_err)
+    }
+
+    /// Computes the transformation on the given ray, computing the error given already 
+    /// existing error components.
+    pub fn trans_ray_from_err
+    (&self, r: &Ray, d_err: &Vector3, o_err: &Vector3)
+    -> (Ray, Vector3, Vector3) {
+        let (mut o, o_err) = self.trans_pt_from_err(&r.o, &o_err);
+        let (d, d_err) = self.trans_vec_from_err(&r.d, &d_err);
+        let t_max = r.t_max.get();
+        let len_sqr = d.length_sqr();
+        if len_sqr > 0. {
+            let dt = dot(&d.abs(), &o_err) / len_sqr;
+            o.add_vec_mut(&d.mult(dt));
+        }
+
+        (Ray::new(&o, &d, t_max, r.time/*, r.medium*/), o_err, d_err)
+    }
 
     /*
     pub fn trans_bounds(&self, b: &Bounds3) -> Bounds3 {
