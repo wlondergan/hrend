@@ -82,7 +82,7 @@ impl Transform {
 
     }
 
-    pub fn trans_vector(&self, v: &Vector3) -> Vector3 {
+    pub fn trans_vec(&self, v: &Vector3) -> Vector3 {
         Vector3 {
             x: self.m.m[0][0] * v.x + self.m.m[1][0] * v.y + self.m.m[2][0] * v.z,
             y: self.m.m[0][1] * v.x + self.m.m[1][1] * v.y + self.m.m[2][1] * v.z,
@@ -194,7 +194,7 @@ impl Transform {
             return self.trans_ray_diff(r); //must explicitly return because the function continues
         }
         let (o, o_err) = self.trans_pt_with_err(&r.o);
-        let d = self.trans_vector(&r.d);
+        let d = self.trans_vec(&r.d);
 
         let len_sqr = d.length_sqr();
         let t_max = r.t_max.get(); //make a copy of the t_max because it's only like 64 bytes and we'll be copying it anyways
@@ -219,8 +219,8 @@ impl Transform {
         let d = Differential { 
             rx_origin: self.trans_point(&rd.rx_origin),
             ry_origin: self.trans_point(&rd.ry_origin),
-            rx_dir: self.trans_vector(&rd.rx_dir),
-            ry_dir: self.trans_vector(&rd.ry_dir)
+            rx_dir: self.trans_vec(&rd.rx_dir),
+            ry_dir: self.trans_vec(&rd.ry_dir)
         };
 
         t.diff = Some(d);
@@ -299,13 +299,18 @@ impl Transform {
         Transform::from_parts(m, m_inv)
     }
 
-    /*
     /// Determines whether or not a given transformation has a scaling term in it.
     pub fn has_scale(&self) -> bool {
-        let a = 
+        let a = self.trans_vec(&Vector3::new(1., 0., 0.)).length_sqr(); //transform the standard basis vectors to determine.
+        let b = self.trans_vec(&Vector3::new(0., 1., 0.)).length_sqr();
+        let c = self.trans_vec(&Vector3::new(0., 0., 1.)).length_sqr();
+        not_one(a) || not_one(b) || not_one(c)
     }
-    */
 
+}
+
+fn not_one(x: f64) -> bool {
+    x < 0.999 && x > 1.001
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
