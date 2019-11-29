@@ -307,6 +307,22 @@ impl Transform {
         not_one(a) || not_one(b) || not_one(c)
     }
 
+    pub fn rotation_x(theta: f64) -> Transform {
+
+    }
+
+    pub fn rotation_y(theta: f64) -> Transform {
+
+    }
+
+    pub fn rotation_z(theta: f64) -> Transform {
+
+    }
+
+    pub fn rotate(theta: f64, axis: &Vector3) -> Transform {
+        
+    }
+
 }
 
 fn not_one(x: f64) -> bool {
