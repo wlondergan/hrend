@@ -17,6 +17,7 @@
  */
 
 use super::vectors::*;
+use super::vectors;
 use super::points::*;
 use super::ray::*;
 use super::normal::*;
@@ -308,19 +309,92 @@ impl Transform {
     }
 
     pub fn rotation_x(theta: f64) -> Transform {
+        let (s, c) = theta.sin_cos();
+        let m = Matrix4x4::new(
+            [[1., 0., 0., 0.], [0., c, -s, 0.], [0., s, c, 0.], [0., 0., 0., 1.]]
+        );
 
+        Transform::from_matrices(&m, &m.transpose())
     }
 
     pub fn rotation_y(theta: f64) -> Transform {
+        let (s, c) = theta.sin_cos();
+        let m = Matrix4x4::new(
+            [[c, 0., s, 0.], [0., 1., 0., 0.], [0., -s, 0., c], [0., 0., 0., 1.]]
+        );
 
+        Transform::from_matrices(&m, &m.transpose())
     }
 
     pub fn rotation_z(theta: f64) -> Transform {
+        let (s, c) = theta.sin_cos();
+        let m = Matrix4x4::new(
+            [[c, -s, 0., 0.], [s, c, 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]]
+        );
 
+        Transform::from_matrices(&m, &m.transpose())
     }
 
     pub fn rotate(theta: f64, axis: &Vector3) -> Transform {
-        
+        let a = vectors::norm(axis);
+        let (sin, cos) = theta.sin_cos();
+
+        let m = Matrix4x4::new(
+            [
+            [
+                a.x * a.x + (1. - a.x * a.x) * cos, // 0, 0
+                a.x * a.y * (1. - cos) - a.z * sin, // 0, 1
+                a.x * a.z * (1. - cos) + a.y * sin, // 0, 2
+                0.                                  // 0, 3
+            ],
+            [
+                a.x * a.y * (1. - cos) + a.z * sin, //1, 0
+                a.y * a.y + (1. - a.y * a.y) * cos, //1, 1
+                a.y * a.z * (1. - cos) - a.x * sin, //1, 2
+                0.                                  //1, 3
+            ],
+            [
+                a.x * a.z * (1. - cos) - a.y * sin, //2, 0
+                a.y * a.z * (1. - cos) + a.x * sin, //2, 1
+                a.z * a.z + (1. - a.z * a.z) * cos, //2, 2
+                0.
+            ],
+            [
+                0., // the fourth column doesn't change when we have rotations
+                0., 
+                0., 
+                1.
+            ]
+            ]
+        );
+
+        Transform::from_matrices(&m, &m.transpose())
+    }
+
+    pub fn look_at(pos: &Point3, look: &Point3, up: &Vector3) -> Transform {
+        let mut cam = IDENTITY;
+        cam.m[0][3] = pos.x;
+        cam.m[1][3] = pos.y;
+        cam.m[2][3] = pos.z;
+        cam.m[3][3] = 1.;
+
+        let dir = vectors::norm(&(*look - *pos)); //this is gross :(
+        let right = vectors::norm(&vectors::cross(&vectors::norm(&up), &dir));
+        let new_up = vectors::cross(&dir, &right);
+        cam.m[0][0] = right.x;
+        cam.m[1][0] = right.y;
+        cam.m[2][0] = right.z;
+        cam.m[3][0] = 0.;
+        cam.m[0][1] = new_up.x;
+        cam.m[1][1] = new_up.y;
+        cam.m[2][1] = new_up.z;
+        cam.m[3][1] = 0.;
+        cam.m[0][2] = dir.x;
+        cam.m[1][2] = dir.y;
+        cam.m[2][2] = dir.z;
+        cam.m[3][2] = 0.;
+
+        Transform::from_matrices(&cam.inverse(), &cam)
     }
 
 }
