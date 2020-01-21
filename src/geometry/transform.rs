@@ -21,17 +21,18 @@ use super::vectors;
 use super::points::*;
 use super::ray::*;
 use super::normal::*;
-use super::bounds::*;
+//use super::bounds::*; //TODO: do I need or want to use bounds?
 use crate::math::gamma;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Transform {
-    m: Matrix4x4,
-    m_inv: Matrix4x4
+    pub m: Matrix4x4,
+    pub m_inv: Matrix4x4
 }
 
 #[allow(dead_code)]
 impl Transform {
+
     pub fn new() -> Transform {
         Transform {
             m: IDENTITY,
@@ -66,13 +67,14 @@ impl Transform {
     pub fn is_identity(&self) -> bool {
         self.m == IDENTITY
     }
-    
+
+    #[allow(clippy::float_cmp)]
     pub fn trans_point(&self, p: &Point3) -> Point3 {
         let xp = self.m.m[0][0] * p.x + self.m.m[0][1] * p.y + self.m.m[0][2]  * p.z + self.m.m[0][3];
         let yp = self.m.m[1][0] * p.x + self.m.m[1][1] * p.y + self.m.m[1][2]  * p.z + self.m.m[1][3];
         let zp = self.m.m[2][0] * p.x + self.m.m[2][1] * p.y + self.m.m[2][2]  * p.z + self.m.m[2][3];
         let wp = self.m.m[3][0] * p.x + self.m.m[3][1] * p.y + self.m.m[3][2]  * p.z + self.m.m[3][3];
-        assert!(wp != 0.); // if wp is zero then the transform will explode a little bit
+        assert_ne!(wp, 0.); // if wp is zero then the transform will explode a little bit
 
         if wp == 1. { //this check allows us to avoid unnecessary fp division
             Point3::new(xp, yp, zp)
@@ -139,6 +141,7 @@ impl Transform {
     }
 
     /// Performs a transformation on the given point and returns it and the computed error (in vec form).
+    #[allow(clippy::float_cmp)]
     pub fn trans_pt_with_err(&self, p: &Point3) -> (Point3, Vector3) {
         // compute trans on point
         let xp = (self.m.m[0][0] * p.x + self.m.m[0][1] * p.y) + (self.m.m[0][2] * p.z + self.m.m[0][3]);
@@ -158,6 +161,7 @@ impl Transform {
     }
 
     /// Performs a transformation on the given point, with inputted error and returns the transformation plus the absolute error.
+    #[allow(clippy::float_cmp)]
     pub fn trans_pt_from_err(&self, p: &Point3, p_err: &Vector3) -> (Point3, Vector3) {
         // compute trans on point
         let xp = (self.m.m[0][0] * p.x + self.m.m[0][1] * p.y) + (self.m.m[0][2] * p.z + self.m.m[0][3]);
@@ -407,13 +411,13 @@ fn not_one(x: f64) -> bool {
 /// Represents a 4x4 matrix and some of the useful associated operations that can be performed on one.
 /// 
 /// TODO decide whether or not this gets to be public
-struct Matrix4x4 {
+pub struct Matrix4x4 {
     pub m: [[f64; 4]; 4],
 }
 
 ///The identity matrix.
 #[allow(dead_code)]
-const IDENTITY: Matrix4x4 = Matrix4x4 {
+pub const IDENTITY: Matrix4x4 = Matrix4x4 {
     m: [[1., 0., 0., 0.],
         [0., 1., 0., 0.],
         [0., 0., 1., 0.],

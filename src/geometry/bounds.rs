@@ -15,13 +15,34 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-use super::points::*;
-use super::vectors::*;
+use super::{
+    points::*,
+    vectors::*
+};
 use std::f64;
 
 //TODO implement iteration over bounds maximum extents 
 //http://www.pbr-book.org/3ed-2018/Geometry_and_Transformations/Bounding_Boxes.html#Bounds3::Inside
 
+/// Represents a 2 dimensional bounding box, represented by minimum and maximum extents.
+/// This is the 2D equivalent of ``Bounds3`` and is somewhat less useful as a construct, but
+/// it's useful to have a 2D equivalent to reduce the cost of some computations.
+/// 
+/// You can construct bounds directly if you want, or you can use the ``Bounds2::new`` function, 
+/// which will make copies of the given bounding points.
+/// ### Usage
+/// ```
+/// # use hrend::geometry::bounds::*;
+/// # use hrend::geometry::points::*;
+/// let min = Point2::new(1., 1.);
+/// let max = Point2::new(2., 2.);
+/// 
+/// let bounds_copy = Bounds2::new(&min, &max);
+/// let bounds_owned = Bounds2 {
+///     p_min: min,
+///     p_max: max
+/// };
+/// ```
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Bounds2 {
     pub p_min: Point2,
@@ -29,10 +50,14 @@ pub struct Bounds2 {
 }
 
 impl Bounds2 {
-    pub fn new(p1: &Point2, p2: &Point2) -> Bounds2 {
+
+    /// Constructs a new Bounds from references to points. This will copy the points to create
+    /// the new Bounds, so it's advisable to only use this if you actually want this behavior.
+    /// Otherwise, it's more advisable to create the Bounds2 object directly.
+    pub fn new(p_min: &Point2, p_max: &Point2) -> Bounds2 {
         Bounds2 {
-            p_min: *p1,
-            p_max: *p2
+            p_min: *p_min,
+            p_max: *p_max
         }
     }
 
@@ -71,7 +96,7 @@ impl Bounds2 {
     }
 
     pub fn by_ind(&self, ind: usize) -> Point2{
-        assert!(0 <= ind && 1 >= ind);
+        assert!(1 >= ind); //TODO: figure out if this is expensive and unneeded
         if ind == 0 {
             self.p_min
         } else {
@@ -119,6 +144,7 @@ impl Bounds2 {
     */
 
     pub fn bound_sphere(&self, c: &mut Point2, rad: &mut f64) -> (Point2, f64) {
+        //TODO: figure out what's actually going on with this function, and what rad does
         (
             (self.p_min + self.p_max).div(2.), 
             if self.inside(c) {c.dist(&self.p_max)} else {0.}
