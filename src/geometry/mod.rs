@@ -37,6 +37,9 @@ pub mod transform;
 /// Provides an implementation for quaternions (4d complex numbers).
 pub mod quaternion;
 
+/// Provides an implementation for transformations that have start and end states (e.g. for objects rotating/translating across time).
+pub mod animatedtrans;
+
 /// Linearly interpolates on a line given a point `t` along the line to find and points 
 ///`v1` and `v2` defining the line segment.
 pub fn lerp(t: f64, v1: f64, v2: f64) -> f64 {

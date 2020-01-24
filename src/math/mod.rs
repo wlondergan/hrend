@@ -27,5 +27,25 @@ pub trait Integrate {
 
 /// Gives the gamma for a certain floating point calculation (essentially the amount of error.)
 pub fn gamma(n: usize) -> f64 {
-    return (n as f64 * f64::EPSILON) / ((1 - n) as f64 * f64::EPSILON);
+    (n as f64 * f64::EPSILON) / ((1 - n) as f64 * f64::EPSILON)
+}
+
+/// If v compares less than lo, returns lo; otherwise if hi compares less than v,
+/// returns hi; otherwise returns v.
+pub fn clamp(v: f64, lo: f64, hi: f64) -> f64 {
+    if v < lo {
+        lo
+    } else if v < hi {
+        hi
+    } else {
+        v
+    }
+}
+
+pub fn max<T: PartialOrd>(a: T, b: T) -> T {
+    if a > b { a } else { b }
+}
+
+pub fn lerp(t: f64, v1: f64, v2: f64) -> f64 {
+    (1. - t) * v1 + t * v2
 }
