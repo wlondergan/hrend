@@ -29,6 +29,12 @@ pub struct Point3 {
 }
 
 impl Point3 {
+
+    /// Initializes a `Point3` at the origin `(0, 0, 0)`.
+    pub fn default() -> Point3 {
+        Point3::new(0., 0., 0.)
+    }
+
     pub fn new(x: f64, y: f64, z: f64) -> Point3 {
         Point3 {
             x,

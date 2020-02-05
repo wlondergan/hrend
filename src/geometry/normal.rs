@@ -26,12 +26,16 @@ pub struct Normal3 {
 }
 
 impl Normal3 {
-    pub fn new(x: f64, y: f64, z: f64) -> Normal3{
+    pub fn new(x: f64, y: f64, z: f64) -> Normal3 {
         Normal3 {x, y, z}
     }
 
     pub fn from_vec3(from: Vector3) -> Normal3 {
         Normal3::new(from.x, from.y, from.z)
+    }
+
+    pub fn default() -> Normal3 {
+        Normal3::new(0., 0., 0.)
     }
 
     pub fn mult(&self, by: f64) -> Normal3 {

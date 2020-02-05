@@ -22,6 +22,8 @@ mod math;
 
 mod util;
 
+mod media;
+
 /// Defines various geometric structs and functions used to represent objects in 3-dimensional space.
 pub mod geometry;
 
