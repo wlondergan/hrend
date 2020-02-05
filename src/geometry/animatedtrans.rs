@@ -65,8 +65,8 @@ impl AnimatedTransform {
                 c5: [DerivativeTerm::default(), DerivativeTerm::default(), DerivativeTerm::default()]
             };
         }
-        let (mut t0, mut r0, mut s0) = Self::decompose(&start_trans.m);
-        let (mut t1, mut r1, mut s1) = Self::decompose(&end_trans.m);
+        let (t0, r0, s0) = Self::decompose(&start_trans.m);
+        let (t1, mut r1, s1) = Self::decompose(&end_trans.m);
         if r0.dot(&r1) < 0. {
             r1.mult_mut(-1.);
         }
@@ -821,7 +821,7 @@ impl AnimatedTransform {
             z: m.m[2][3]
         };
 
-        let mut m = m.clone(); //rebind m without translation
+        let mut m = *m; //rebind m without translation
         for i in 0..3 {
             m.m[i][3] = 0.;
             m.m[3][i] = 0.;
@@ -830,7 +830,7 @@ impl AnimatedTransform {
 
         let mut norm = 0.;
         let mut count = 0;
-        let mut r = m.clone(); // get an extra copy for messing up
+        let mut r = m; // get an extra copy for messing up
         loop {
             // we repeatedly calculate the next matrix in the series
             // by taking the inverse of the transpose.
