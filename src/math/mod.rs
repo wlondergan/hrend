@@ -31,7 +31,7 @@ pub fn gamma(n: usize) -> f64 {
 }
 
 /// If v compares less than lo, returns lo; otherwise if hi compares less than v,
-/// returns hi; otherwise returns v.
+/// returns hi; otherwise returns v. TODO make generic
 pub fn clamp(v: f64, lo: f64, hi: f64) -> f64 {
     if v < lo {
         lo
@@ -42,10 +42,21 @@ pub fn clamp(v: f64, lo: f64, hi: f64) -> f64 {
     }
 }
 
+/// returns the maximum of the two elements.
 pub fn max<T: PartialOrd>(a: T, b: T) -> T {
     if a > b { a } else { b }
 }
 
+/// returns the minimum of two elements.
+pub fn min<T: PartialOrd>(a: T, b: T) -> T {
+    if a < b { a } else { b }
+}
+
 pub fn lerp(t: f64, v1: f64, v2: f64) -> f64 {
     (1. - t) * v1 + t * v2
+}
+
+/// Determines whether or not two floats are equal (within the floating point epsilon).
+pub fn eq_f64(a: f64, b: f64) -> bool {
+    (a - b).abs() <= f64::EPSILON
 }

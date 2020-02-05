@@ -55,6 +55,7 @@ impl Quaternion {
     /// Creates a Quaternion from a Transform, via the method suggested in
     /// `pbrt`. According to the `pbrt` documentation, we should consult
     /// Shoemake (1991).
+    #[allow(clippy::many_single_char_names)]
     pub fn from_transform(t: &Transform) -> Quaternion {
         let trace = t.m.m[0][0] + t.m.m[1][1] + t.m.m[2][2];
 

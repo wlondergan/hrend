@@ -21,6 +21,7 @@ use super::vectors;
 use super::points::*;
 use super::ray::*;
 use super::normal::*;
+use super::bounds::*;
 //use super::bounds::*; //TODO: do I need or want to use bounds?
 use crate::math::gamma;
 
@@ -266,11 +267,26 @@ impl Transform {
         (Ray::new(&o, &d, t_max, r.time/*, r.medium*/), o_err, d_err)
     }
 
-    /*
+    
     pub fn trans_bounds(&self, b: &Bounds3) -> Bounds3 {
-
+        let mut ret = Bounds3::from_point(
+            &self.trans_point(&Point3::new(b.p_min.x, b.p_min.y, b.p_min.z)));
+        ret = ret.union_pt(
+            &self.trans_point(&Point3::new(b.p_max.x, b.p_min.y, b.p_min.z)));
+        ret = ret.union_pt(
+            &self.trans_point(&Point3::new(b.p_min.x, b.p_max.y, b.p_min.z)));
+        ret = ret.union_pt(
+            &self.trans_point(&Point3::new(b.p_min.x, b.p_min.y, b.p_max.z)));
+        ret = ret.union_pt(
+            &self.trans_point(&Point3::new(b.p_min.x, b.p_max.y, b.p_max.z)));
+        ret = ret.union_pt(
+            &self.trans_point(&Point3::new(b.p_max.x, b.p_max.y, b.p_min.z)));
+        ret = ret.union_pt(
+            &self.trans_point(&Point3::new(b.p_max.x, b.p_min.y, b.p_max.z)));
+        ret = ret.union_pt(
+            &self.trans_point(&Point3::new(b.p_max.x, b.p_max.y, b.p_max.z)));
+        ret
     }
-    */
 
     pub fn translate(delta: &Vector3) -> Transform {
         let m = [
@@ -585,7 +601,7 @@ mod test {
                 [-0.5, 0.5, 0., 0.5]]
         };
 
-        let margin = 0.0000001;
+        let margin = 0.000_000_1;
 
         let mut inv_correct = true;
         for i in 0..4 {

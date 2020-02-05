@@ -19,6 +19,8 @@ use super::{
     points::*,
     vectors::*
 };
+
+use crate::math;
 use std::f64;
 
 //TODO implement iteration over bounds maximum extents 
@@ -290,5 +292,26 @@ impl Bounds3 {
             if self.inside(c) {self.p_max.dist(c)} else {0.}
         )
     }
+
+    /// Computes a new bounding box that encompasses both the new point
+    /// and the current bounding box
+    pub fn union_pt(&self, p: &Point3) -> Bounds3 {
+        Bounds3::new(
+            &Point3::new(math::min(self.p_min.x, p.x),
+                        math::min(self.p_min.y, p.y),
+                        math::min(self.p_min.z, p.z)),
+            &Point3::new(math::max(self.p_max.x, p.x),
+                        math::max(self.p_max.y, p.y),
+                        math::max(self.p_max.z, p.z)))
+    }
     
+    pub fn union(&self, b: &Bounds3) -> Bounds3 {
+        Bounds3::new(
+            &Point3::new(math::min(self.p_min.x, b.p_min.x),
+                        math::min(self.p_min.y, b.p_min.y),
+                        math::min(self.p_min.z, b.p_min.z)),
+            &Point3::new(math::max(self.p_max.x, b.p_max.x),
+                        math::max(self.p_max.y, b.p_max.y),
+                        math::max(self.p_max.z, b.p_max.z)))
+    }
 }
