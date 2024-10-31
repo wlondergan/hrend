@@ -2,3 +2,4 @@
 
 pub mod integrators;
 pub mod math;
+pub mod geometry;

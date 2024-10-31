@@ -1,3 +1,5 @@
+use crate::geometry::Point2f;
+
 
 /// Squares the given number.
 #[inline]
@@ -37,6 +39,36 @@ pub fn linear_sample(u: f32, a: f32, b: f32) -> f32 {
 #[inline]
 pub const fn invert_linear_sample(x: f32, a: f32, b: f32) -> f32 {
     x * (a * (2.0 - x) + (b * x)) / (a + b)
+}
+
+/// The bilinear interpolation function, where `w` are the corners of the function and `x, y` interpolate over them in the 
+/// unit square.
+#[inline]
+const fn bilerp(p: Point2f, w: &[f32; 4]) -> f32 {
+    (1.0 - p.x) * (1.0 - p.y) * w[0] + 
+    p.x * (1.0 - p.y) * w[1] + 
+    p.y * (1.0 - p.x) * w[2] + 
+    p.x * p.y * w[3]
+} 
+
+/// The bilinear interpolation function's PDF.
+#[inline]
+pub const fn bilinear_pdf(p: Point2f, w: &[f32; 4]) -> f32 {
+    if p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0 {
+        return 0.0;
+    }
+    if w[0] + w[1] + w[2] + w[3] == 0.0 {
+        return 1.0;
+    }
+    4.0 * bilerp(p, w) / (w[0] + w[1] + w[2] + w[3])
+}
+
+/// Takes a sample from the bilinear distribution, given `u` in the `xi` x `xi` distribution.
+#[inline]
+pub fn bilinear_sample(u: Point2f, w: &[f32; 4]) -> Point2f {
+    let y = linear_sample(u.y, w[0] + w[1], w[2] + w[3]);
+    let x = linear_sample(u.x, lerp(y, w[0], w[2]), lerp(y, w[1], w[3]));
+    Point2f {x, y}
 }
 
 pub const ONE_MINUS_EPSILON: f32 = 1.0 - f32::EPSILON;
