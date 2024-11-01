@@ -73,6 +73,119 @@ pub fn bilinear_sample(u: Point2f, w: &[f32; 4]) -> Point2f {
 
 pub const ONE_MINUS_EPSILON: f32 = 1.0 - f32::EPSILON;
 
+pub fn arcsin(f: f32) -> f32 {
+    f32::clamp(f32::asin(f), -1.0, 1.0)
+}
+
+pub fn arccos(f: f32) -> f32 {
+    f32::clamp(f32::acos(f), -1.0, 1.0)
+}
+
+pub trait Num<Rhs = Self, Output = Self>: 
+    Add<Rhs, Output = Output> + Sub<Rhs, Output = Output> + 
+    Mul<Rhs, Output = Output> + Div<Rhs, Output = Output> + 
+    Rem<Rhs, Output = Output> + Copy + Neg<Output=Self> + PartialOrd { 
+    fn is_nan(a: Self) -> bool;
+    fn sqrt(a: Self) -> f32;
+    fn ceil(a: Self) -> Self;
+    fn floor(a: Self) -> Self;
+    fn to_float(a: Self) -> f32;
+    fn abs(a: Self) -> Self;
+    fn fma(a: Self, b: Self, c: Self) -> Self;
+    fn min(a: Self, b: Self) -> Self;
+    fn max(a: Self, b: Self) -> Self;
+
+    fn diff_products(a: Self, b: Self, c: Self, d: Self) {
+        let cd = c * d;
+        let diff_prod = Num::fma(a, b, -cd);
+        let err = Num::fma(-c, d, cd);
+        diff_prod + err
+    }
+
+    fn sum_products(a: Self, b: Self, c: Self, d: Self) {
+        let cd = c * d;
+        let sum_prod = Num::fma(a, b, cd);
+        let err = Num::fma(c, d, -cd);
+        sum_prod + err
+    }
+}
+
+impl Num for i32 {
+    fn is_nan(_: Self) -> bool {
+        false
+    }
+
+    fn sqrt(a: Self) -> f32 {
+        (a as f32).sqrt()
+    }
+
+    fn ceil(a: Self) -> Self {
+        a
+    }
+
+    fn floor(a: Self) -> Self {
+        a
+    }
+
+    fn to_float(a: Self) -> f32 {
+        a as f32
+    }
+
+    fn abs(a: Self) -> Self {
+        i32::abs(a)
+    }
+    
+    fn fma(a: Self, b: Self, c: Self) -> Self {
+        a*b+c
+    }
+    
+    fn min(a: Self, b: Self) -> Self {
+        Ord::min(a, b)
+    }
+    
+    fn max(a: Self, b: Self) -> Self {
+        Ord::max(a, b)
+    }
+}
+
+impl Num for f32 {
+    fn to_float(a: Self) -> f32 {
+        a
+    }
+    
+    fn is_nan(a: Self) -> bool {
+        f32::is_nan(a)
+    }
+    
+    fn sqrt(a: Self) -> f32 {
+        f32::sqrt(a)
+    }
+    
+    fn ceil(a: Self) -> Self {
+        f32::ceil(a)
+    }
+    
+    fn floor(a: Self) -> Self {
+        f32::floor(a)
+    }
+
+    fn abs(a: Self) -> Self {
+        f32::abs(a)
+    }
+    
+    fn fma(a: Self, b: Self, c: Self) -> Self {
+        f32::mul_add(a, b, c)
+    }
+    
+    fn min(a: Self, b: Self) -> Self {
+        f32::min(a, b)
+    }
+    
+    fn max(a: Self, b: Self) -> Self {
+        f32::max(a, b)
+    }
+}
+
 // The following two functions were ripped from https://rust-lang.github.io/rfcs/3173-float-next-up-down.html.
 // They're used for floating point error correction.
 

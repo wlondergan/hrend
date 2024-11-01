@@ -1,20 +1,5 @@
-use crate::math::square;
+use crate::math::{arcsin, square, Num};
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
-
-trait Num<Rhs = Self, Output = Self>: 
-    Add<Rhs, Output = Output> + Sub<Rhs, Output = Output> + 
-    Mul<Rhs, Output = Output> + Div<Rhs, Output = Output> + 
-    Rem<Rhs, Output = Output> + Copy + Neg<Output=Self> + PartialOrd { 
-    fn is_nan(a: Self) -> bool;
-    fn sqrt(a: Self) -> f32;
-    fn ceil(a: Self) -> Self;
-    fn floor(a: Self) -> Self;
-    fn to_float(a: Self) -> f32;
-    fn abs(a: Self) -> Self;
-    fn fma(a: Self, b: Self, c: Self) -> Self;
-    fn min(a: Self, b: Self) -> Self;
-    fn max(a: Self, b: Self) -> Self;
-}
 
 trait VecOps<T: Num, Rhs = Self, Output = Self>: 
     Add<Rhs, Output = Output> + Sub<Rhs, Output = Output> + 
@@ -22,112 +7,90 @@ trait VecOps<T: Num, Rhs = Self, Output = Self>:
     Mul<T, Output = Output> + Div<T, Output = Output> +
     MulAssign<T> + DivAssign<T> { }
 
-/// Defines a vector type to be used in the library. All of these methods are defined over any Vect type, specifically
+/// Defines a vector type to be used in the library. All of these methods are defined over any V type, specifically
 /// Vector3 and Vector2.
+pub trait Vector<T: Num>: Index<isize> + VecOps<T> + Sized + Copy {
+    
+    type FloatType: Vector<f32>;
+    
+    fn length(a: Self) -> f32;
+    
+    fn length_squared(a: Self) -> T;
+    
+    fn normalize(a: Self) -> Self::FloatType;
+    
+    fn abs(a: Self) -> Self;
+    
+    fn ceil(a: Self) -> Self;
+    
+    fn floor(a: Self) -> Self;
+    
+    fn as_floats(a: Self) -> Self::FloatType;
 
-pub trait Vect<T: Num>: Index<isize> {
-    type FloatType;
-    fn length(a: &Self) -> f32;
-    fn length_squared(a: &Self) -> T;
-    fn normalize(a: &Self) -> Self::FloatType;
-    fn abs(a: &Self) -> Self;
-    fn ceil(a: &Self) -> Self;
-    fn floor(a: &Self) -> Self;
-    fn as_floats(a: &Self) -> Self::FloatType;
-    fn lerp(t: f32, a: &Self, b: &Self) -> Self::FloatType;
-    fn fma(a: &Self, b: &Self, c: &Self) -> Self;
-    fn min(a: &Self, b: &Self) -> Self;
-    fn max(a: &Self, b: &Self) -> Self;
-    fn min_component(a: &Self) -> T;
-    fn max_component(a: &Self) -> T;
-    fn min_component_index(a: &Self) -> isize;
-    fn max_component_index(a: &Self) -> isize;
-    fn permute(a: &Self, pm: &[isize]) -> Self;
-    fn h_prod(a: &Self) -> T;
+    fn lerp(t: f32, a: Self, b: Self) -> Self::FloatType;
+
+    fn fma(a: Self, b: Self, c: Self) -> Self;
+
+    fn min(a: Self, b: Self) -> Self;
+
+    fn max(a: Self, b: Self) -> Self;
+
+    fn min_component(a: Self) -> T;
+
+    fn max_component(a: Self) -> T;
+
+    fn min_component_index(a: Self) -> isize;
+
+    fn max_component_index(a: Self) -> isize;
+
+    fn permute(a: Self, pm: &[isize]) -> Self;
+
+    fn h_prod(a: Self) -> T;
+
+    fn dot(a: Self, b: Self) -> T;
+
+    fn angle_between(a: Self, b: Self) -> f32 {
+        if Self::FloatType::dot(Vector::as_floats(a), Vector::as_floats(b)) < 0.0 {
+            return std::f32::consts::PI - 2.0 * arcsin(Vector::length(a + b));
+        } else {
+            return 2.0 * arcsin(Vector::length(a + b));
+        }
+    }
+
+    fn abs_dot(a: Self, b: Self) -> T {
+        Num::abs(Vector::dot(a, b))
+    }
+
+    fn gram_schmidt(v: Self, w: Self) -> Self {
+        v - w * Vector::dot(v, w)
+    }
+
+    fn distance(p1: Self, p2: Self) -> f32 {
+        Vector::length(p1 - p2)
+    }
+
+    fn distance_squared(p1: Self, p2: Self) -> f32 {
+        Vector::length_squared(p1 - p2)
+    }
+
+    fn face_forward(n: Self, v: Self) -> Self {
+        if Vector::dot(n, v) < 0.0 {
+            n
+        } else {
+            -n
+        }
+    }
+
 }
 
-
-impl Num for i32 {
-    fn is_nan(_: Self) -> bool {
-        false
-    }
-
-    fn sqrt(a: Self) -> f32 {
-        (a as f32).sqrt()
-    }
-
-    fn ceil(a: Self) -> Self {
-        a
-    }
-
-    fn floor(a: Self) -> Self {
-        a
-    }
-
-    fn to_float(a: Self) -> f32 {
-        a as f32
-    }
-
-    fn abs(a: Self) -> Self {
-        i32::abs(a)
-    }
-    
-    fn fma(a: Self, b: Self, c: Self) -> Self {
-        a*b+c
-    }
-    
-    fn min(a: Self, b: Self) -> Self {
-        Ord::min(a, b)
-    }
-    
-    fn max(a: Self, b: Self) -> Self {
-        Ord::max(a, b)
-    }
-}
-
-impl Num for f32 {
-    fn to_float(a: Self) -> f32 {
-        a
-    }
-    
-    fn is_nan(a: Self) -> bool {
-        f32::is_nan(a)
-    }
-    
-    fn sqrt(a: Self) -> f32 {
-        f32::sqrt(a)
-    }
-    
-    fn ceil(a: Self) -> Self {
-        f32::ceil(a)
-    }
-    
-    fn floor(a: Self) -> Self {
-        f32::floor(a)
-    }
-
-    fn abs(a: Self) -> Self {
-        f32::abs(a)
-    }
-    
-    fn fma(a: Self, b: Self, c: Self) -> Self {
-        f32::mul_add(a, b, c)
-    }
-    
-    fn min(a: Self, b: Self) -> Self {
-        f32::min(a, b)
-    }
-    
-    fn max(a: Self, b: Self) -> Self {
-        f32::max(a, b)
-    }
-}
 
 #[derive(Copy, Clone)]
 struct Vector2<T: Num>{
     pub x: T,
     pub y: T
 }
+
+impl<T: Num> VecOps<T, Self, Self> for Vector2<T> { }
 
 impl<T: Num> Vector2<T> {
     pub fn new(x: T, y: T) -> Self {
@@ -237,108 +200,112 @@ impl<T: Num> Index<isize> for Vector2<T> {
     }
 }
 
-impl<T: Num> Vect<T> for Vector2<T> {
+impl<T: Num> Vector<T> for Vector2<T> {
 
     type FloatType = Vector2<f32>;
 
-    fn length_squared(a: &Self) -> T {
+    fn length_squared(a: Self) -> T {
         square(a.x) + square(a.y)
     }
 
-    fn length(a: &Self) -> f32 {
-        Num::sqrt(Vect::length_squared(a))
+    fn length(a: Self) -> f32 {
+        Num::sqrt(Vector::length_squared(a))
     }
 
-    fn normalize(a: &Self) -> Vector2<f32> {
-        Vect::as_floats(a) / Vect::length(a)
+    fn normalize(a: Self) -> Vector2<f32> {
+        Vector::as_floats(a) / Vector::length(a)
     }
     
-    fn abs(a: &Self) -> Self {
+    fn abs(a: Self) -> Self {
         Vector2 { 
             x: Num::abs(a.x), 
             y: Num::abs(a.y) 
         }
     }
     
-    fn ceil(a: &Self) -> Self {
+    fn ceil(a: Self) -> Self {
         Vector2 { 
             x: Num::ceil(a.x), 
             y: Num::ceil(a.y)
         }
     }
     
-    fn floor(a: &Self) -> Self {
+    fn floor(a: Self) -> Self {
         Vector2 { 
             x: Num::floor(a.x), 
             y: Num::floor(a.y)
         }
     }
 
-    fn as_floats(a: &Self) -> Self::FloatType {
+    fn as_floats(a: Self) -> Self::FloatType {
         Vector2 { 
             x: Num::to_float(a.x), 
             y: Num::to_float(a.y)
         }
     }
     
-    fn lerp(t: f32, a: &Self, b: &Self) -> Self::FloatType {
-        Vect::as_floats(a) * (1.0 - t) + Vect::as_floats(b) * t
+    fn lerp(t: f32, a: Self, b: Self) -> Self::FloatType {
+        Vector::as_floats(a) * (1.0 - t) + Vector::as_floats(b) * t
     }
     
-    fn fma(a: &Self, b: &Self, c: &Self) -> Self {
+    fn fma(a: Self, b: Self, c: Self) -> Self {
         Vector2 {
             x: Num::fma(a.x, b.x, c.x),
             y: Num::fma(a.y, b.y, c.y)
         }
     }
     
-    fn min(a: &Self, b: &Self) -> Self {
+    fn min(a: Self, b: Self) -> Self {
         Vector2 {
             x: Num::min(a.x, b.x),
             y: Num::min(a.y, b.y)
         }
     }
     
-    fn max(a: &Self, b: &Self) -> Self {
+    fn max(a: Self, b: Self) -> Self {
         Vector2 {
             x: Num::max(a.x, b.x),
             y: Num::max(a.y, b.y)
         }
     }
     
-    fn min_component(a: &Self) -> T {
+    fn min_component(a: Self) -> T {
         Num::min(a.x, a.y)
     }
     
-    fn max_component(a: &Self) -> T {
+    fn max_component(a: Self) -> T {
         Num::max(a.x, a.y)
     }
     
-    fn min_component_index(a: &Self) -> isize {
-        let m = Vect::min_component(a);
+    fn min_component_index(a: Self) -> isize {
+        let m = Vector::min_component(a);
         if m == a.x { 0 } else { 1 }
     }
     
-    fn max_component_index(a: &Self) -> isize {
-        let m = Vect::max_component(a);
+    fn max_component_index(a: Self) -> isize {
+        let m = Vector::max_component(a);
         if m == a.x { 0 } else { 1 }
     }
     
-    fn permute(a: &Self, pm: &[isize]) -> Self {
+    fn permute(a: Self, pm: &[isize]) -> Self {
         Vector2 {
             x: a[pm[0]],
             y: a[pm[1]]
         }
     }
     
-    fn h_prod(a: &Self) -> T {
+    fn h_prod(a: Self) -> T {
         a.x * a.y
+    }
+
+    fn dot(a: Self, b: Self) -> T {
+        a.x * b.x + a.y * b.y
     }
 
 
 }
 
-
+#[derive(Copy, Clone)]
 struct Vector3<T: Num> {
     pub x: T,
     pub y: T,
@@ -347,7 +314,31 @@ struct Vector3<T: Num> {
 
 impl<T: Num> Vector3<T> {
 
+    pub fn new(x: T, y: T, z: T) -> Self {
+        Vector3 {x, y, z}
+    }
+
+    pub fn cross(v: Self, w: Self) -> Self {
+        Vector3 {
+            x: Num::diff_products(v.y, v.z, w.z, w.y),
+            y: Num::diff_products(v.z, w.x, v.x, w.z),
+            z: Num::diff_products(v.x, w.y, v.y, w.x)
+        }
+    }
+
+    pub fn coord_system(v: Self) -> (Self, Self) {
+        let vf = Vector::as_floats(v);
+        let sign = f32::copysign(1.0, vf.z);
+        let a = -1.0 / (sign + vf.z);
+        let b = vf.x * vf.y * a;
+        (
+            Vector3::new(1 + sign * square(vf.x) * a, sign * b, -sign * vf.x),
+            Vector3::new(b, sign + square(vf.y) * a, -vf.y)
+        )
+    }
 }
+
+impl<T: Num> VecOps<T, Self, Self> for Vector3<T> { }
 
 impl<T: Num> Add<Self> for Vector3<T> {
     type Output = Self;
@@ -456,22 +447,22 @@ impl<T: Num> Index<isize> for Vector3<T> {
     }
 }
 
-impl<T: Num> Vect<T> for Vector3<T> {
+impl<T: Num> Vector<T> for Vector3<T> {
     type FloatType = Vector3<f32>;
 
-    fn length(a: &Self) -> f32 {
-        Num::sqrt(Vect::length_squared(a))
+    fn length(a: Self) -> f32 {
+        Num::sqrt(Vector::length_squared(a))
     }
 
-    fn length_squared(a: &Self) -> T {
+    fn length_squared(a: Self) -> T {
         square(a.x) + square(a.y) + square(a.z)
     }
 
-    fn normalize(a: &Self) -> Self::FloatType {
-        Vect::as_floats(a) / Vect::length(a)
+    fn normalize(a: Self) -> Self::FloatType {
+        Vector::as_floats(a) / Vector::length(a)
     }
 
-    fn abs(a: &Self) -> Self {
+    fn abs(a: Self) -> Self {
         Vector3 {
             x: Num::abs(a.x),
             y: Num::abs(a.y),
@@ -479,7 +470,7 @@ impl<T: Num> Vect<T> for Vector3<T> {
         }
     }
 
-    fn ceil(a: &Self) -> Self {
+    fn ceil(a: Self) -> Self {
         Vector3 {
             x: Num::ceil(a.x),
             y: Num::ceil(a.y),
@@ -487,7 +478,7 @@ impl<T: Num> Vect<T> for Vector3<T> {
         }
     }
 
-    fn floor(a: &Self) -> Self {
+    fn floor(a: Self) -> Self {
         Vector3 {
             x: Num::floor(a.x),
             y: Num::floor(a.y),
@@ -495,7 +486,7 @@ impl<T: Num> Vect<T> for Vector3<T> {
         }
     }
 
-    fn as_floats(a: &Self) -> Self::FloatType {
+    fn as_floats(a: Self) -> Self::FloatType {
         Vector3 {
             x: Num::to_float(a.x),
             y: Num::to_float(a.y),
@@ -503,11 +494,11 @@ impl<T: Num> Vect<T> for Vector3<T> {
         }
     }
 
-    fn lerp(t: f32, a: &Self, b: &Self) -> Self::FloatType {
-        Vect::as_floats(a) * (1.0 - t) + Vect::as_floats(b) * t
+    fn lerp(t: f32, a: Self, b: Self) -> Self::FloatType {
+        Vector::as_floats(a) * (1.0 - t) + Vector::as_floats(b) * t
     }
 
-    fn fma(a: &Self, b: &Self, c: &Self) -> Self {
+    fn fma(a: Self, b: Self, c: Self) -> Self {
         Vector3 {
             x: Num::fma(a.x, b.x, c.x),
             y: Num::fma(a.y, b.y, c.y),
@@ -515,7 +506,7 @@ impl<T: Num> Vect<T> for Vector3<T> {
         }
     }
 
-    fn min(a: &Self, b: &Self) -> Self {
+    fn min(a: Self, b: Self) -> Self {
         Vector3 {
             x: Num::min(a.x, b.x),
             y: Num::min(a.y, b.y),
@@ -523,7 +514,7 @@ impl<T: Num> Vect<T> for Vector3<T> {
         }
     }
 
-    fn max(a: &Self, b: &Self) -> Self {
+    fn max(a: Self, b: Self) -> Self {
         Vector3 {
             x: Num::max(a.x, b.x),
             y: Num::max(a.y, b.y),
@@ -531,25 +522,25 @@ impl<T: Num> Vect<T> for Vector3<T> {
         }
     }
 
-    fn min_component(a: &Self) -> T {
+    fn min_component(a: Self) -> T {
         Num::min(Num::min(a.x, a.y), a.z)
     }
 
-    fn max_component(a: &Self) -> T {
+    fn max_component(a: Self) -> T {
         Num::max(Num::max(a.x, a.y), a.z)
     }
 
-    fn min_component_index(a: &Self) -> isize {
-        let m = Vect::min_component(a);
+    fn min_component_index(a: Self) -> isize {
+        let m = Vector::min_component(a);
         if m == a.x {0} else if m == a.y {1} else {2}
     }
 
-    fn max_component_index(a: &Self) -> isize {
-        let m = Vect::max_component(a);
+    fn max_component_index(a: Self) -> isize {
+        let m = Vector::max_component(a);
         if m == a.x {0} else if m == a.y {1} else {2}
     }
 
-    fn permute(a: &Self, pm: &[isize]) -> Self {
+    fn permute(a: Self, pm: &[isize]) -> Self {
         Vector3 {
             x: a[pm[0]],
             y: a[pm[1]],
@@ -557,8 +548,12 @@ impl<T: Num> Vect<T> for Vector3<T> {
         }
     }
 
-    fn h_prod(a: &Self) -> T {
+    fn h_prod(a: Self) -> T {
         a.x * a.y * a.z
+    }
+
+    fn dot(a: Self, b: Self) -> T {
+        a.x * b.x + a.y * b.y + a.z * b.z
     }
 }
 
@@ -566,3 +561,5 @@ pub type Vector2f = Vector2<f32>;
 pub type Vector2i = Vector2<i32>;
 pub type Vector3f = Vector3<f32>;
 pub type Vector3i = Vector3<i32>;
+
+pub type Normal3f = Vector3f;
