@@ -1,5 +1,5 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
-use super::geometry::Vector2f;
+use std::ops::{Add, Div, Mul, Neg, Sub};
+use crate::geometry::vector::Vector2f;
 
 /// Squares the given number.
 #[inline]
@@ -84,7 +84,7 @@ pub fn arccos(f: f32) -> f32 {
 pub trait Num: 
     Add<Self, Output = Self> + Sub<Self, Output = Self> + 
     Mul<Self, Output = Self> + Div<Self, Output = Self> + 
-    Rem<Self, Output = Self> + Copy + Neg<Output=Self> + PartialOrd { 
+    Copy + Neg<Output=Self> + PartialOrd { 
     fn is_nan(a: Self) -> bool;
     fn sqrt(a: Self) -> f32;
     fn ceil(a: Self) -> Self;

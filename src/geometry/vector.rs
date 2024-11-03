@@ -3,7 +3,7 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, 
 
 trait VecOps<T: Num, Rhs = Self, Output = Self>: 
     Add<Rhs, Output = Output> + Sub<Rhs, Output = Output> + 
-    AddAssign<Rhs> + SubAssign<Rhs> + Neg + 
+    AddAssign<Rhs> + SubAssign<Rhs> + Neg<Output = Output> + 
     Mul<T, Output = Output> + Div<T, Output = Output> +
     MulAssign<T> + DivAssign<T> { }
 
@@ -568,84 +568,3 @@ pub type Vector3i = Vector3<i32>;
 
 pub type Normal3f = Vector3f;
 
-pub trait GenericRay {
-    fn o(&self) -> Vector3f;
-    fn d(&self) -> Vector3f;
-    fn time(&self) -> f32;
-
-    fn at(&self, t: f32) -> Vector3f {
-        self.o() + self.d() * t
-    }
-}
-
-#[derive(Clone, Copy)]
-pub struct Ray {
-    pub o: Vector3f,
-    pub d: Vector3f,
-    pub time: f32,
-    // medium: Medium
-}
-
-pub struct DiffRay {
-    ray: Ray,
-    has_diff: bool,
-    rx_origin: Vector3f,
-    ry_origin: Vector3f,
-    rx_direction: Vector3f,
-    ry_direction: Vector3f
-}
-
-impl Ray {
-    pub fn new(o: Vector3f, d: Vector3f) -> Ray {
-        Ray {o, d, time: 0.0}
-    }
-}
-
-impl GenericRay for Ray {
-    fn o(&self) -> Vector3f {
-        self.o
-    }
-
-    fn d(&self) -> Vector3f {
-        self.d
-    }
-
-    fn time(&self) -> f32 {
-        self.time
-    }
-}
-
-impl DiffRay {
-    pub fn new(ray: &Ray) -> DiffRay {
-        DiffRay {
-            ray: *ray,
-            has_diff: false,
-            rx_origin: Vector3::default(),
-            ry_origin: Vector3::default(),
-            rx_direction: Vector3::default(),
-            ry_direction: Vector3::default()
-        }
-    }
-
-    pub fn scale_diffs(&mut self, s: f32) {
-        self.rx_origin = self.o() + (self.rx_origin - self.o()) * s;
-        self.ry_origin = self.o() + (self.ry_origin - self.o()) * s;
-        self.rx_direction = self.d() + (self.rx_direction - self.d()) * s;
-        self.ry_direction = self.d() + (self.ry_direction - self.d()) * s;
-    }
-
-}
-
-impl GenericRay for DiffRay {
-    fn o(&self) -> Vector3f {
-        self.ray.o()
-    }
-
-    fn d(&self) -> Vector3f {
-        self.ray.d()
-    }
-
-    fn time(&self) -> f32 {
-        self.ray.time()
-    }
-}
