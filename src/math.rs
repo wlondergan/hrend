@@ -1,5 +1,5 @@
-use crate::geometry::Point2f;
-
+use std::ops::{Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
+use super::geometry::Vector2f;
 
 /// Squares the given number.
 #[inline]
@@ -44,7 +44,7 @@ pub const fn invert_linear_sample(x: f32, a: f32, b: f32) -> f32 {
 /// The bilinear interpolation function, where `w` are the corners of the function and `x, y` interpolate over them in the 
 /// unit square.
 #[inline]
-const fn bilerp(p: Point2f, w: &[f32; 4]) -> f32 {
+const fn bilerp(p: Vector2f, w: &[f32; 4]) -> f32 {
     (1.0 - p.x) * (1.0 - p.y) * w[0] + 
     p.x * (1.0 - p.y) * w[1] + 
     p.y * (1.0 - p.x) * w[2] + 
@@ -53,7 +53,7 @@ const fn bilerp(p: Point2f, w: &[f32; 4]) -> f32 {
 
 /// The bilinear interpolation function's PDF.
 #[inline]
-pub const fn bilinear_pdf(p: Point2f, w: &[f32; 4]) -> f32 {
+pub const fn bilinear_pdf(p: Vector2f, w: &[f32; 4]) -> f32 {
     if p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0 {
         return 0.0;
     }
@@ -65,10 +65,10 @@ pub const fn bilinear_pdf(p: Point2f, w: &[f32; 4]) -> f32 {
 
 /// Takes a sample from the bilinear distribution, given `u` in the `xi` x `xi` distribution.
 #[inline]
-pub fn bilinear_sample(u: Point2f, w: &[f32; 4]) -> Point2f {
+pub fn bilinear_sample(u: Vector2f, w: &[f32; 4]) -> Vector2f {
     let y = linear_sample(u.y, w[0] + w[1], w[2] + w[3]);
     let x = linear_sample(u.x, lerp(y, w[0], w[2]), lerp(y, w[1], w[3]));
-    Point2f {x, y}
+    Vector2f {x, y}
 }
 
 pub const ONE_MINUS_EPSILON: f32 = 1.0 - f32::EPSILON;
@@ -81,10 +81,10 @@ pub fn arccos(f: f32) -> f32 {
     f32::clamp(f32::acos(f), -1.0, 1.0)
 }
 
-pub trait Num<Rhs = Self, Output = Self>: 
-    Add<Rhs, Output = Output> + Sub<Rhs, Output = Output> + 
-    Mul<Rhs, Output = Output> + Div<Rhs, Output = Output> + 
-    Rem<Rhs, Output = Output> + Copy + Neg<Output=Self> + PartialOrd { 
+pub trait Num: 
+    Add<Self, Output = Self> + Sub<Self, Output = Self> + 
+    Mul<Self, Output = Self> + Div<Self, Output = Self> + 
+    Rem<Self, Output = Self> + Copy + Neg<Output=Self> + PartialOrd { 
     fn is_nan(a: Self) -> bool;
     fn sqrt(a: Self) -> f32;
     fn ceil(a: Self) -> Self;
@@ -94,15 +94,16 @@ pub trait Num<Rhs = Self, Output = Self>:
     fn fma(a: Self, b: Self, c: Self) -> Self;
     fn min(a: Self, b: Self) -> Self;
     fn max(a: Self, b: Self) -> Self;
+    fn default() -> Self;
 
-    fn diff_products(a: Self, b: Self, c: Self, d: Self) {
+    fn diff_products(a: Self, b: Self, c: Self, d: Self) -> Self {
         let cd = c * d;
         let diff_prod = Num::fma(a, b, -cd);
         let err = Num::fma(-c, d, cd);
         diff_prod + err
     }
 
-    fn sum_products(a: Self, b: Self, c: Self, d: Self) {
+    fn sum_products(a: Self, b: Self, c: Self, d: Self) -> Self {
         let cd = c * d;
         let sum_prod = Num::fma(a, b, cd);
         let err = Num::fma(c, d, -cd);
@@ -146,6 +147,10 @@ impl Num for i32 {
     fn max(a: Self, b: Self) -> Self {
         Ord::max(a, b)
     }
+
+    fn default() -> Self {
+        0
+    }
 }
 
 impl Num for f32 {
@@ -183,6 +188,10 @@ impl Num for f32 {
     
     fn max(a: Self, b: Self) -> Self {
         f32::max(a, b)
+    }
+
+    fn default() -> Self {
+        0.0
     }
 }
 
@@ -239,7 +248,7 @@ pub const fn next_down(x: f32) -> f32 {
 
     let bits = x.to_bits();
     if x.is_nan() || bits == f32::NEG_INFINITY.to_bits() {
-        return self;
+        return x;
     }
     
     let abs = bits & CLEAR_SIGN_MASK;

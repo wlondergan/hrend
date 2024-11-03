@@ -1,5 +1,5 @@
 use crate::math::{arcsin, square, Num};
-use std::ops::{Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign};
 
 trait VecOps<T: Num, Rhs = Self, Output = Self>: 
     Add<Rhs, Output = Output> + Sub<Rhs, Output = Output> + 
@@ -70,11 +70,11 @@ pub trait Vector<T: Num>: Index<isize> + VecOps<T> + Sized + Copy {
     }
 
     fn distance_squared(p1: Self, p2: Self) -> f32 {
-        Vector::length_squared(p1 - p2)
+        Num::to_float(Vector::length_squared(p1 - p2))
     }
 
     fn face_forward(n: Self, v: Self) -> Self {
-        if Vector::dot(n, v) < 0.0 {
+        if Num::to_float(Vector::dot(n, v)) < 0.0 {
             n
         } else {
             -n
@@ -318,6 +318,10 @@ impl<T: Num> Vector3<T> {
         Vector3 {x, y, z}
     }
 
+    pub fn default() -> Self {
+        Vector3 {x: T::default(), y: T::default(), z: T::default()}
+    }
+
     pub fn cross(v: Self, w: Self) -> Self {
         Vector3 {
             x: Num::diff_products(v.y, v.z, w.z, w.y),
@@ -326,13 +330,13 @@ impl<T: Num> Vector3<T> {
         }
     }
 
-    pub fn coord_system(v: Self) -> (Self, Self) {
+    pub fn coord_system(v: Self) -> (Vector3f, Vector3f) {
         let vf = Vector::as_floats(v);
         let sign = f32::copysign(1.0, vf.z);
         let a = -1.0 / (sign + vf.z);
         let b = vf.x * vf.y * a;
         (
-            Vector3::new(1 + sign * square(vf.x) * a, sign * b, -sign * vf.x),
+            Vector3::new(1.0 + sign * square(vf.x) * a, sign * b, -sign * vf.x),
             Vector3::new(b, sign + square(vf.y) * a, -vf.y)
         )
     }
@@ -563,3 +567,85 @@ pub type Vector3f = Vector3<f32>;
 pub type Vector3i = Vector3<i32>;
 
 pub type Normal3f = Vector3f;
+
+pub trait GenericRay {
+    fn o(&self) -> Vector3f;
+    fn d(&self) -> Vector3f;
+    fn time(&self) -> f32;
+
+    fn at(&self, t: f32) -> Vector3f {
+        self.o() + self.d() * t
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct Ray {
+    pub o: Vector3f,
+    pub d: Vector3f,
+    pub time: f32,
+    // medium: Medium
+}
+
+pub struct DiffRay {
+    ray: Ray,
+    has_diff: bool,
+    rx_origin: Vector3f,
+    ry_origin: Vector3f,
+    rx_direction: Vector3f,
+    ry_direction: Vector3f
+}
+
+impl Ray {
+    pub fn new(o: Vector3f, d: Vector3f) -> Ray {
+        Ray {o, d, time: 0.0}
+    }
+}
+
+impl GenericRay for Ray {
+    fn o(&self) -> Vector3f {
+        self.o
+    }
+
+    fn d(&self) -> Vector3f {
+        self.d
+    }
+
+    fn time(&self) -> f32 {
+        self.time
+    }
+}
+
+impl DiffRay {
+    pub fn new(ray: &Ray) -> DiffRay {
+        DiffRay {
+            ray: *ray,
+            has_diff: false,
+            rx_origin: Vector3::default(),
+            ry_origin: Vector3::default(),
+            rx_direction: Vector3::default(),
+            ry_direction: Vector3::default()
+        }
+    }
+
+    pub fn scale_diffs(&mut self, s: f32) {
+        self.rx_origin = self.o() + (self.rx_origin - self.o()) * s;
+        self.ry_origin = self.o() + (self.ry_origin - self.o()) * s;
+        self.rx_direction = self.d() + (self.rx_direction - self.d()) * s;
+        self.ry_direction = self.d() + (self.ry_direction - self.d()) * s;
+    }
+
+}
+
+impl GenericRay for DiffRay {
+    fn o(&self) -> Vector3f {
+        self.ray.o()
+    }
+
+    fn d(&self) -> Vector3f {
+        self.ray.d()
+    }
+
+    fn time(&self) -> f32 {
+        self.ray.time()
+    }
+}
