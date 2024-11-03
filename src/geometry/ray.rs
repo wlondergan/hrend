@@ -1,5 +1,3 @@
-use crate::math::Num;
-
 use super::vector::{Vector, Vector3f};
 
 pub trait GenericRay {

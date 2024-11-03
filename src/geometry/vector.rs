@@ -9,7 +9,7 @@ trait VecOps<T: Num, Rhs = Self, Output = Self>:
 
 /// Defines a vector type to be used in the library. All of these methods are defined over any V type, specifically
 /// Vector3 and Vector2.
-pub trait Vector<T: Num>: Index<isize> + VecOps<T> + Sized + Copy {
+pub trait Vector<T: Num>: Index<usize> + VecOps<T> + Sized + Copy {
     
     type FloatType: Vector<f32>;
 
@@ -45,11 +45,11 @@ pub trait Vector<T: Num>: Index<isize> + VecOps<T> + Sized + Copy {
 
     fn max_component(a: Self) -> T;
 
-    fn min_component_index(a: Self) -> isize;
+    fn min_component_index(a: Self) -> usize;
 
-    fn max_component_index(a: Self) -> isize;
+    fn max_component_index(a: Self) -> usize;
 
-    fn permute(a: Self, pm: &[isize]) -> Self;
+    fn permute(a: Self, pm: &[usize]) -> Self;
 
     fn h_prod(a: Self) -> T;
 
@@ -194,10 +194,10 @@ impl<T: Num> DivAssign<T> for Vector2<T> {
     }
 }
 
-impl<T: Num> Index<isize> for Vector2<T> {
+impl<T: Num> Index<usize> for Vector2<T> {
     type Output = T;
 
-    fn index(&self, index: isize) -> &Self::Output {
+    fn index(&self, index: usize) -> &Self::Output {
         match index {
             0 => &self.x,
             1 => &self.y,
@@ -297,17 +297,17 @@ impl<T: Num> Vector<T> for Vector2<T> {
         Num::max(a.x, a.y)
     }
     
-    fn min_component_index(a: Self) -> isize {
+    fn min_component_index(a: Self) -> usize {
         let m = Vector::min_component(a);
         if m == a.x { 0 } else { 1 }
     }
     
-    fn max_component_index(a: Self) -> isize {
+    fn max_component_index(a: Self) -> usize {
         let m = Vector::max_component(a);
         if m == a.x { 0 } else { 1 }
     }
     
-    fn permute(a: Self, pm: &[isize]) -> Self {
+    fn permute(a: Self, pm: &[usize]) -> Self {
         Vector2 {
             x: a[pm[0]],
             y: a[pm[1]]
@@ -461,10 +461,10 @@ impl<T: Num> DivAssign<T> for Vector3<T> {
     }
 }
 
-impl<T: Num> Index<isize> for Vector3<T> {
+impl<T: Num> Index<usize> for Vector3<T> {
     type Output = T;
 
-    fn index(&self, index: isize) -> &Self::Output {
+    fn index(&self, index: usize) -> &Self::Output {
         match index {
             0 => &self.x,
             1 => &self.y,
@@ -557,17 +557,17 @@ impl<T: Num> Vector<T> for Vector3<T> {
         Num::max(Num::max(a.x, a.y), a.z)
     }
 
-    fn min_component_index(a: Self) -> isize {
+    fn min_component_index(a: Self) -> usize {
         let m = Vector::min_component(a);
         if m == a.x {0} else if m == a.y {1} else {2}
     }
 
-    fn max_component_index(a: Self) -> isize {
+    fn max_component_index(a: Self) -> usize {
         let m = Vector::max_component(a);
         if m == a.x {0} else if m == a.y {1} else {2}
     }
 
-    fn permute(a: Self, pm: &[isize]) -> Self {
+    fn permute(a: Self, pm: &[usize]) -> Self {
         Vector3 {
             x: a[pm[0]],
             y: a[pm[1]],
