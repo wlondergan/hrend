@@ -1,4 +1,6 @@
-use super::vector::Vector3f;
+use crate::math::Num;
+
+use super::vector::{Vector, Vector3f};
 
 pub trait GenericRay {
     fn o(&self) -> Vector3f;
@@ -20,11 +22,11 @@ pub struct Ray {
 
 pub struct DiffRay {
     ray: Ray,
-    has_diff: bool,
-    rx_origin: Vector3f,
-    ry_origin: Vector3f,
-    rx_direction: Vector3f,
-    ry_direction: Vector3f
+    pub has_diff: bool,
+    pub rx_origin: Vector3f,
+    pub ry_origin: Vector3f,
+    pub rx_direction: Vector3f,
+    pub ry_direction: Vector3f
 }
 
 impl Ray {
@@ -48,14 +50,15 @@ impl GenericRay for Ray {
 }
 
 impl DiffRay {
+    
     pub fn new(ray: &Ray) -> DiffRay {
         DiffRay {
             ray: *ray,
             has_diff: false,
-            rx_origin: Vector3f::default(),
-            ry_origin: Vector3f::default(),
-            rx_direction: Vector3f::default(),
-            ry_direction: Vector3f::default()
+            rx_origin: Vector3f::all_x(0.0),
+            ry_origin: Vector3f::all_x(0.0),
+            rx_direction: Vector3f::all_x(0.0),
+            ry_direction: Vector3f::all_x(0.0)
         }
     }
 

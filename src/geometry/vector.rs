@@ -12,6 +12,12 @@ trait VecOps<T: Num, Rhs = Self, Output = Self>:
 pub trait Vector<T: Num>: Index<isize> + VecOps<T> + Sized + Copy {
     
     type FloatType: Vector<f32>;
+
+    fn default() -> Self;
+
+    fn maximum() -> Self;
+
+    fn all_x(x: T) -> Self;
     
     fn length(a: Self) -> f32;
     
@@ -85,7 +91,7 @@ pub trait Vector<T: Num>: Index<isize> + VecOps<T> + Sized + Copy {
 
 
 #[derive(Copy, Clone)]
-struct Vector2<T: Num>{
+pub struct Vector2<T: Num>{
     pub x: T,
     pub y: T
 }
@@ -204,6 +210,20 @@ impl<T: Num> Vector<T> for Vector2<T> {
 
     type FloatType = Vector2<f32>;
 
+    fn default() -> Self {
+        Vector2 {
+            x: T::default(),
+            y: T::default()
+        }
+    }
+
+    fn maximum() -> Self {
+        Vector2 {
+            x: T::default(),
+            y: T::default()
+        }
+    }
+
     fn length_squared(a: Self) -> T {
         square(a.x) + square(a.y)
     }
@@ -301,12 +321,19 @@ impl<T: Num> Vector<T> for Vector2<T> {
     fn dot(a: Self, b: Self) -> T {
         a.x * b.x + a.y * b.y
     }
+    
+    fn all_x(x: T) -> Self {
+        Self {
+            x,
+            y: x
+        }
+    }
 
 
 }
 
 #[derive(Copy, Clone)]
-struct Vector3<T: Num> {
+pub struct Vector3<T: Num> {
     pub x: T,
     pub y: T,
     pub z: T
@@ -316,10 +343,6 @@ impl<T: Num> Vector3<T> {
 
     pub fn new(x: T, y: T, z: T) -> Self {
         Vector3 {x, y, z}
-    }
-
-    pub fn default() -> Self {
-        Vector3 {x: T::default(), y: T::default(), z: T::default()}
     }
 
     pub fn cross(v: Self, w: Self) -> Self {
@@ -558,6 +581,30 @@ impl<T: Num> Vector<T> for Vector3<T> {
 
     fn dot(a: Self, b: Self) -> T {
         a.x * b.x + a.y * b.y + a.z * b.z
+    }
+    
+    fn default() -> Self {
+        Vector3 {
+            x: T::default(),
+            y: T::default(),
+            z: T::default()
+        }
+    }
+    
+    fn maximum() -> Self {
+        Vector3 {
+            x: T::maxiumum(),
+            y: T::maxiumum(),
+            z: T::maxiumum()
+        }
+    }
+    
+    fn all_x(x: T) -> Self {
+        Self {
+            x,
+            y: x,
+            z: x
+        }
     }
 }
 

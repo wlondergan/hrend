@@ -1,4 +1,5 @@
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use core::f32;
+use std::{i32, ops::{Add, Div, Mul, Neg, Sub}};
 use crate::geometry::vector::Vector2f;
 
 /// Squares the given number.
@@ -95,6 +96,9 @@ pub trait Num:
     fn min(a: Self, b: Self) -> Self;
     fn max(a: Self, b: Self) -> Self;
     fn default() -> Self;
+    fn maxiumum() -> Self;
+    fn from_f32(x: f32) -> Self;
+    fn from_i32(x: i32) -> Self;
 
     fn diff_products(a: Self, b: Self, c: Self, d: Self) -> Self {
         let cd = c * d;
@@ -151,6 +155,18 @@ impl Num for i32 {
     fn default() -> Self {
         0
     }
+
+    fn maxiumum() -> Self {
+        i32::MAX
+    }
+    
+    fn from_f32(x: f32) -> Self {
+        x as i32
+    }
+    
+    fn from_i32(x: i32) -> Self {
+        x
+    }
 }
 
 impl Num for f32 {
@@ -192,6 +208,18 @@ impl Num for f32 {
 
     fn default() -> Self {
         0.0
+    }
+
+    fn maxiumum() -> Self {
+        f32::MAX
+    }
+    
+    fn from_f32(x: f32) -> Self {
+        x
+    }
+    
+    fn from_i32(x: i32) -> Self {
+        x as f32
     }
 }
 
