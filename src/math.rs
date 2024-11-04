@@ -4,9 +4,7 @@ use crate::geometry::vector::{Vector, Vector2f, Vector3, Vector3f};
 
 /// Squares the given number.
 #[inline]
-pub fn square<T>(a: T) -> T 
-    where T: std::ops::Mul<T, Output=T> + Copy 
-    {
+pub fn square<T: Num>(a: T) -> T {
     a * a
 }
 
@@ -82,6 +80,13 @@ pub fn arccos(f: f32) -> f32 {
     f32::clamp(f32::acos(f), -1.0, 1.0)
 }
 
+/// Provides all of the traits that a number should have for the purposes of this library. 
+/// Allows for split implementation of types across traits (see: `Vector`) where guaranteeing that
+/// all of these operations are available is desirable.
+/// 
+/// Currently implemented for the types
+/// - `f32`
+/// - `i32`
 pub trait Num: 
     Add<Self, Output = Self> + Sub<Self, Output = Self> + 
     Mul<Self, Output = Self> + Div<Self, Output = Self> + 
