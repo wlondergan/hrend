@@ -5,6 +5,8 @@ use crate::math::{self, square, Num};
 use super::vector::{Vector, Vector2, Vector3, Vector2i, Vector2f, Vector3i, Vector3f};
 
 // TODO implement an iterator (or other algorithm somewhere) which allows iteration over integer bounds within a given bounding box
+// As far as I can tell, this is only used for subpixel iteration when rendering to a screen, so this probably isn't too big of a deal
+// if not implemented.
 
 struct Bounds<T: Num, V: Vector<T>> {
     pub min_point: V,
@@ -232,7 +234,8 @@ impl Bounds<f32, Vector3f> {
         }
     }
 
-    /// Gives the [0, 1] ratio of how far the given point is across the bounding box (i.e. the inverse of lerp).
+    /// Gives the [0, 1] ratio of how far the given point is across the bounding box in each dimension (i.e. the inverse of lerp).
+    /// Should generally only be used after verifying that the given point is actually inside of the bounding box (`inside`.)
     fn offset(&self, p: Vector3f) -> Vector3f {
         let mut o = p - self.min_point;
         if self.max_point.x > self.min_point.x {

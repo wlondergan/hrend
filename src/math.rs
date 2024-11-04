@@ -1,6 +1,6 @@
 use core::f32;
-use std::{i32, ops::{Add, Div, Mul, Neg, Sub}};
-use crate::geometry::vector::Vector2f;
+use std::{f32::consts::PI, i32, ops::{Add, Div, Mul, Neg, Sub}};
+use crate::geometry::vector::{Vector, Vector2f, Vector3, Vector3f};
 
 /// Squares the given number.
 #[inline]
@@ -288,4 +288,120 @@ pub const fn next_down(x: f32) -> f32 {
         bits + 1
     };
     f32::from_bits(next_bits)
+}
+
+/// Computes the (solid angle) area of the spherical triangle with vertices given by `a`, `b`, and `c`.
+pub fn spherical_triangle_area(a: Vector3f, b: Vector3f, c: Vector3f) -> f32 {
+    f32::abs(2.0 * f32::atan2(Vector3f::dot(a, Vector3f::cross(b, c)), 
+        1.0 + Vector3f::dot(a, b) + Vector3f::dot(a, c) + Vector3f::dot(b, c)))
+}
+
+/// Computes the (solid angle) area of the spherical quadrangle with vertices given by `a, b, c, d`.
+pub fn spherical_quad_area(a: Vector3f, b: Vector3f, c: Vector3f, d: Vector3f) -> f32 {
+    let mut a_cross_b = Vector3f::cross(a, b);
+    let mut b_cross_c = Vector3f::cross(b, c);
+    let mut c_cross_d = Vector3f::cross(c, d);
+    let mut d_cross_a = Vector3f::cross(d, a);
+    if Vector3::length_squared(a_cross_b) == 0.0 || Vector3::length_squared(b_cross_c) == 0.0 || 
+    Vector3::length_squared(c_cross_d) == 0.0 || Vector3::length_squared(d_cross_a) == 0.0 {
+        return 0.0;
+    }
+    a_cross_b = Vector3f::normalize(a_cross_b);
+    b_cross_c = Vector3f::normalize(b_cross_c);
+    c_cross_d = Vector3f::normalize(c_cross_d);
+    d_cross_a = Vector3f::normalize(d_cross_a);
+
+    let alpha = Vector3f::angle_between(d_cross_a, -a_cross_b);
+    let beta = Vector3f::angle_between(a_cross_b, -b_cross_c);
+    let gamma = Vector3f::angle_between(b_cross_c, -c_cross_d);
+    let delta = Vector3f::angle_between(c_cross_d, -d_cross_a);
+
+    f32::abs(alpha + beta + gamma + delta - 2.0 * PI)
+}
+
+/// Converts a set of spherical coordinates into a unit vector in (x, y, z).
+/// Takes in an already computed `sin(Theta)`, `cos(Theta)`, but not `phi`.
+pub fn spherical_direction(sin_theta: f32, cos_theta: f32, phi: f32) -> Vector3f {
+    Vector3f::new(
+        f32::clamp(sin_theta, -1.0, 1.0) * f32::cos(phi),
+        f32::clamp(sin_theta, -1.0, 1.0) * f32::sin(phi),
+        f32::clamp(cos_theta, -1.0, 1.0)
+    )
+}
+
+/// Computes `theta` in spherical coordinates, given a unit vector in `x, y, z`.
+pub fn spherical_theta(v: Vector3f) -> f32 {
+    arccos(v.z)
+}
+
+/// Computes `phi` in spherical coordinates, given a unit vector in `x, y, z`.
+pub fn spherical_phi(v: Vector3f) -> f32 {
+    let p = f32::atan2(v.y, v.x);
+    if p < 0.0 {
+        p + 2.0 * PI
+    } else {
+        p
+    }
+}
+
+/// Gets the value of `cos(theta)` from spherical coordinates, given the vector representation of it.
+pub fn cos_theta(w: Vector3f) -> f32 {
+    w.z
+}
+
+/// Gets the value of `cos^2(theta)` from spherical coordinates, given the vector representation of it.
+pub fn cos2_theta(w: Vector3f) -> f32 {
+    square(w.z)
+}
+
+/// Gets the value of `abs(cos(theta))` from spherical coordinates, given the vector representation of it.
+pub fn abs_cos_theta(w: Vector3f) -> f32 {
+    f32::abs(w.z)
+}
+
+/// Gets the value of `sin^2(theta)` from spherical coordinates, given the vector representation of it.
+pub fn sin2_theta(w: Vector3f) -> f32 {
+    f32::max(0.0, 1.0 - cos2_theta(w))
+}
+
+/// Gets the value of `sin(theta)` from spherical coordinates, given the vector representation of it.
+pub fn sin_theta(w: Vector3f) -> f32 {
+    f32::sqrt(sin2_theta(w))
+}
+
+pub fn tan_theta(w: Vector3f) -> f32 {
+    sin_theta(w) / cos_theta(w)
+}
+
+pub fn tan2_theta(w: Vector3f) -> f32 {
+    sin2_theta(w) / cos2_theta(w)
+}
+
+pub fn cos_phi(w: Vector3f) -> f32 {
+    let sin_theta = sin_theta(w);
+    if sin_theta == 0.0 {
+        1.0
+    } else {
+        f32::clamp(w.x / sin_theta, -1.0, 1.0)
+    }
+}
+
+pub fn sin_phi(w: Vector3f) -> f32 {
+    let sin_theta = sin_theta(w);
+    if sin_theta == 0.0 {
+        0.0
+    } else {
+        f32::clamp(w.y / sin_theta, -1.0, 1.0)
+    }
+}
+
+/// Finds the cosine of the angle (delta phi) between two different vectors' phi values.
+pub fn cos_d_phi(wa: Vector3f, wb: Vector3f) -> f32 {
+    let waxy = square(wa.x) + square(wa.y);
+    let wbxy = square(wb.x) + square(wb.y);
+    if waxy == 0.0 || wbxy == 0.0 {
+        1.0
+    } else {
+        f32::clamp((wa.x + wb.x + wa.y * wb.y) / f32::sqrt(waxy * wbxy), -1.0, 1.0)
+    }
 }

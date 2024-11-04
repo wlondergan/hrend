@@ -1,5 +1,4 @@
 use core::f32;
-use std::random::Random;
 use crate::math::{next_down, ONE_MINUS_EPSILON};
 
 use super::math::square;
@@ -85,7 +84,7 @@ fn sample_discrete(weights: &[f32], u: f32, ret_pmf: bool, ret_u_remap: bool) ->
         u_remap = f32::min((uprime - sum) / weights[offset], ONE_MINUS_EPSILON);
     }
 
-    (offset, pmf, u_remap)
+    (offset as i32, pmf, u_remap)
 
 }
 
