@@ -1,5 +1,6 @@
-use crate::math::{arcsin, square, Num};
-use std::ops::{Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign};
+use crate::math::{arcsin, eval_polynomial, safe_sqrt, square, Num};
+use std::{f32::consts::PI, ops::{Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign}};
+use std::mem;
 
 trait VecOps<T: Num, Rhs = Self, Output = Self>: 
     Add<Rhs, Output = Output> + Sub<Rhs, Output = Output> + 
@@ -615,13 +616,12 @@ pub type Vector3i = Vector3<i32>;
 
 pub type Normal3f = Vector3f;
 
+/// Encodes the rotation of a Vector3f projected onto the unit sphere using two `u16`, with a mapping from the unit 
+/// sphere projected onto an octahedron. Use `Vector3f as OctahedralVector` or `OctahedralVector as Vector3f` to achieve
+/// this conversion.
 pub struct OctahedralVector {
     x: u16,
     y: u16
-}
-
-impl OctahedralVector {
-    
 }
 
 const U16_MAX_FLOAT: f32 = 65535.0;
@@ -666,5 +666,100 @@ impl Into<Vector3f> for OctahedralVector {
         }
         Vector::normalize(v)
     }
+}
+
+/// Takes a point from the equal-area mapping onto a Vector3 on the unit sphere.
+/// See: pbrt 4th edition, 3.9 for algorithm
+/// From pbrt source code: -> Clarberg ~ Fast Equal-Area Mapping of the (Hemi)Sphere using SIMD
+pub fn equal_area_square_to_sphere(p: Vector2f) -> Vector3f {
+    debug_assert!(p.x >= 0.0 && p.x <= 1.0 && p.y >= 0.0 && p.y <= 1.0);
+    let u = 2.0 * p.x - 1.0;
+    let v = 2.0 * p.y - 1.0;
+    let u_p = f32::abs(u);
+    let v_p = f32::abs(v);
+
+    let signed_dist = 1.0 - (u_p + v_p);
+    let d = f32::abs(signed_dist);
+    let r = 1.0 - d;
+
+    let phi = (if r == 0.0 {1.0} else {(v_p - u_p) / r + 1.0}) * PI / 4.0;
+
+    let z = f32::copysign(1.0 - square(r), signed_dist);
+
+    let cos_phi = f32::copysign(f32::cos(phi), u);
+    let sin_phi = f32::copysign(f32::sin(phi), v);
+    Vector3f {
+        x: cos_phi * r * safe_sqrt(2.0 - square(r)),
+        y: sin_phi * r * safe_sqrt(2.0 - square(r)),
+        z
+    }
+}
+
+/// Takes a point from the unit sphere onto the equal-area mapped disk. See: 
+/// `equal_area_square_to_sphere`
+pub fn equal_area_sphere_to_square(d: Vector3f) -> Vector2f {
+    debug_assert!(Vector::length_squared(d) > 0.999 && Vector::length_squared(d) < 1.001);
+    let x = f32::abs(d.x);
+    let y = f32::abs(d.y);
+    let z = f32::abs(d.z);
+
+    let r = safe_sqrt(1.0 - z);
+    let a = f32::max(x, y);
+    let mut b = f32::min(x, y);
+    b = if a == 0.0 {0.0} else {b/a};
+
+    // coefficients for a 6th degree approximation of the function `atan(x) * 2 / pi`
+    const COEFFS: [f32;7] = 
+    [0.406758566246788489601959989e-5,
+    0.636226545274016134946890922156,
+    0.61572017898280213493197203466e-2,
+    -0.247333733281268944196501420480,
+    0.881770664775316294736387951347e-1,
+    0.419038818029165735901852432784e-1,
+    -0.251390972343483509333252996350e-1];
+
+    let mut phi = eval_polynomial(b, &COEFFS);
+
+    if x < y {
+        phi = 1.0 - phi;
+    }
+
+    let mut v = phi * r;
+    let mut u = r - v;
+
+    if d.z < 0.0 {
+        mem::swap(&mut u, &mut v);
+        u = 1.0 - u;
+        v = 1.0 - v;
+    }
+
+    u = f32::copysign(u, d.x);
+    v = f32::copysign(v, d.y);
+
+    Vector2 {
+        x: 0.5 * (u + 1.0),
+        y: 0.5 * (v + 1.0)
+    }
+}
+
+/// Wraps the given square for any `u, v` values that might fall outside of the regular `[-1, 1]^2` mapping.
+pub fn wrap_equal_area_square(uv: Vector2f) -> Vector2f {
+    let mut uv = uv;
+    if uv.x < 0.0 {
+        uv.x = -uv.x;
+        uv.y = 1.0 - uv.y;
+    } else if uv.x > 1.0 {
+        uv.x = 2.0 - uv.x;
+        uv.y = 1.0 - uv.y;
+    }
+
+    if uv.y < 0.0 {
+        uv.x = 1.0 - uv.x;
+        uv.y = -uv.y;
+    } else if uv.y > 1.0 {
+        uv.x = 1.0 - uv.x;
+        uv.y = 2.0 - uv.y;
+    }
+    uv
 }
 

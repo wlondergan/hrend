@@ -84,6 +84,10 @@ pub fn arccos(f: f32) -> f32 {
     f32::clamp(f32::acos(f), -1.0, 1.0)
 }
 
+pub fn safe_sqrt(f: f32) -> f32 {
+    f32::sqrt(f32::max(0.0, f))
+}
+
 /// Provides all of the traits that a number should have for the purposes of this library. 
 /// Allows for split implementation of types across traits (see: `Vector`) where guaranteeing that
 /// all of these operations are available is desirable.
@@ -413,4 +417,11 @@ pub fn cos_d_phi(wa: Vector3f, wb: Vector3f) -> f32 {
     } else {
         f32::clamp((wa.x + wb.x + wa.y * wb.y) / f32::sqrt(waxy * wbxy), -1.0, 1.0)
     }
+}
+
+pub fn eval_polynomial(t: f32, c: &[f32]) -> f32 {
+    if c.len() == 1 {
+        return c[0];
+    }
+    Num::fma(t, eval_polynomial(t, &c[1..]), c[0])
 }
