@@ -615,3 +615,56 @@ pub type Vector3i = Vector3<i32>;
 
 pub type Normal3f = Vector3f;
 
+pub struct OctahedralVector {
+    x: u16,
+    y: u16
+}
+
+impl OctahedralVector {
+    
+}
+
+const U16_MAX_FLOAT: f32 = 65535.0;
+
+/// Takes a float in the range of [-1, 1] to an unsigned integer,
+/// corresponding to a discretization of that range into 2^16 discrete segments.
+fn ovec_float_encode(f: f32) -> u16 {
+    f32::round(f32::clamp((f + 1.0) / 2.0, 0.0, 1.0) * U16_MAX_FLOAT) as u16
+}
+
+impl From<Vector3f> for OctahedralVector {
+    fn from(value: Vector3f) -> Self {
+        let mut v = value;
+        v /= f32::abs(v.x) + f32::abs(v.y) + f32::abs(v.z);
+        if v.z >= 0.0 {
+            OctahedralVector {
+                x: ovec_float_encode(v.x),
+                y: ovec_float_encode(v.y)
+            }
+        } else {
+         OctahedralVector {
+                x: ovec_float_encode((1.0 - f32::abs(v.y)) * f32::signum(v.x)),
+                y: ovec_float_encode((1.0 - f32::abs(v.x)) * f32::signum(v.y))
+            }
+        }
+    }
+}
+
+impl Into<Vector3f> for OctahedralVector {
+    fn into(self) -> Vector3f {
+        let x = -1.0 + 2.0 * (self.x as f32 / U16_MAX_FLOAT);
+        let y = -1.0 + 2.0 * (self.y as f32 / U16_MAX_FLOAT);
+        let mut v = Vector3f {
+            x,
+            y,
+            z: 1.0 - (f32::abs(x) + f32::abs(y))
+        };
+        if v.z < 0.0 {
+            let vx = v.x;
+            v.x = 1.0 - f32::abs(v.y) * f32::signum(vx);
+            v.y = 1.0 - f32::abs(vx) * f32::signum(v.y);
+        }
+        Vector::normalize(v)
+    }
+}
+

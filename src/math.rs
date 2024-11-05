@@ -72,10 +72,14 @@ pub fn bilinear_sample(u: Vector2f, w: &[f32; 4]) -> Vector2f {
 
 pub const ONE_MINUS_EPSILON: f32 = 1.0 - f32::EPSILON;
 
+/// The standard `f32::asin` function, but clamped between -1 and 1 for float purposes.
+/// I'm not entirely sure if this is necessary, but pbrt uses something similar for its
+/// arcsin implementation.
 pub fn arcsin(f: f32) -> f32 {
     f32::clamp(f32::asin(f), -1.0, 1.0)
 }
 
+/// see `arcsin` for justtification on what this function does
 pub fn arccos(f: f32) -> f32 {
     f32::clamp(f32::acos(f), -1.0, 1.0)
 }
