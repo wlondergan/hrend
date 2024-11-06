@@ -8,7 +8,7 @@ use super::vector::{Vector, Vector2, Vector3, Vector2i, Vector2f, Vector3i, Vect
 // As far as I can tell, this is only used for subpixel iteration when rendering to a screen, so this probably isn't too big of a deal
 // if not implemented.
 
-struct Bounds<T: Num, V: Vector<T>> {
+pub struct Bounds<T: Num, V: Vector<T>> {
     pub min_point: V,
     pub max_point: V,
     _t: PhantomData<T>
@@ -16,7 +16,7 @@ struct Bounds<T: Num, V: Vector<T>> {
 
 impl<T: Num, V: Vector<T>> Bounds<T, V> {
 
-    fn default() -> Self {
+    pub fn default() -> Self {
         Self {
             min_point: V::default(),
             max_point: V::maximum(),
@@ -24,7 +24,7 @@ impl<T: Num, V: Vector<T>> Bounds<T, V> {
         }
     }
 
-    fn new(p1: V, p2: V) -> Self {
+    pub fn new(p1: V, p2: V) -> Self {
         Self {
             min_point: Vector::min(p1, p2),
             max_point: Vector::max(p1, p2),
@@ -32,7 +32,7 @@ impl<T: Num, V: Vector<T>> Bounds<T, V> {
         }
     }
 
-    fn from_point(p1: V) -> Self {
+    pub fn from_point(p1: V) -> Self {
         Self {
             min_point: p1,
             max_point: p1,
@@ -41,7 +41,7 @@ impl<T: Num, V: Vector<T>> Bounds<T, V> {
     }
 
     /// Adds the given point `p` to the existing bounds `b` to yield a new bounding box.
-    fn add_point(b: &Self, p: V) -> Self {
+    pub fn add_point(b: &Self, p: V) -> Self {
         Bounds {
             min_point: Vector::min(b.min_point, p),
             max_point: Vector::max(b.max_point, p),
@@ -49,7 +49,7 @@ impl<T: Num, V: Vector<T>> Bounds<T, V> {
         }
     }
 
-    fn union(b1: &Self, b2: &Self) -> Self {
+    pub fn union(b1: &Self, b2: &Self) -> Self {
         Bounds {
             min_point: Vector::min(b1.min_point, b2.min_point),
             max_point: Vector::max(b1.max_point, b2.max_point),
@@ -57,7 +57,7 @@ impl<T: Num, V: Vector<T>> Bounds<T, V> {
         }
     }
 
-    fn intersection(b1: &Self, b2: &Self) -> Self {
+    pub fn intersection(b1: &Self, b2: &Self) -> Self {
         Bounds {
             min_point: Vector::max(b1.min_point, b2.min_point),
             max_point: Vector::min(b1.max_point, b2.max_point),
@@ -65,7 +65,7 @@ impl<T: Num, V: Vector<T>> Bounds<T, V> {
         }
     }
 
-    fn expand(b: &Self, by: T) -> Self {
+    pub fn expand(b: &Self, by: T) -> Self {
         Bounds {
             min_point: b.min_point - Vector::all_x(by),
             max_point: b.max_point + Vector::all_x(by),
@@ -73,11 +73,11 @@ impl<T: Num, V: Vector<T>> Bounds<T, V> {
         }
     }
 
-    fn diagonal(b: &Self) -> V {
+    pub fn diagonal(b: &Self) -> V {
         b.max_point - b.min_point
     }
 
-    fn volume(b: &Self) -> T {
+    pub fn volume(b: &Self) -> T {
         Vector::h_prod(Self::diagonal(b))
     }
 
@@ -85,31 +85,31 @@ impl<T: Num, V: Vector<T>> Bounds<T, V> {
 
 impl<T: Num> Bounds<T, Vector2<T>> {
 
-    fn corner(&self, c: usize) -> Vector2<T> {
+    pub fn corner(&self, c: usize) -> Vector2<T> {
         Vector2 {
             x: self[c & 1].x,
             y: self[c & 2].y
         }
     }
 
-    fn overlap(b1: &Self, b2: &Self) -> bool {
+    pub fn overlap(b1: &Self, b2: &Self) -> bool {
         b1.max_point.x >= b2.min_point.x && b1.min_point.x <= b2.max_point.x &&
         b1.max_point.y >= b2.min_point.y && b1.min_point.y <= b2.max_point.y
     }
 
-    fn inside(p: Vector2<T>, b: &Self) -> bool {
+    pub fn inside(p: Vector2<T>, b: &Self) -> bool {
         p.x >= b.min_point.x && p.x <= b.max_point.x &&
         p.y >= b.min_point.y && p.y <= b.max_point.y
     }
 
     /// Same as `inside`, but excludes the top bound (generally only useful with integer bounds, but implemented
     /// generically anyways.)
-    fn inside_exclusive(p: Vector2<T>, b: &Self) -> bool {
+    pub fn inside_exclusive(p: Vector2<T>, b: &Self) -> bool {
         p.x >= b.min_point.x && p.x < b.max_point.x &&
         p.y >= b.min_point.y && p.y < b.max_point.y
     }
 
-    fn distance_squared(p: Vector2<T>, b: &Self) -> f32 {
+    pub fn distance_squared(p: Vector2<T>, b: &Self) -> f32 {
         let minp = Vector::as_floats(b.min_point);
         let maxp = Vector::as_floats(b.max_point);
         let pf = Vector::as_floats(p);
@@ -118,15 +118,15 @@ impl<T: Num> Bounds<T, Vector2<T>> {
         square(dist_x) + square(dist_y)
     }
 
-    fn distance(p: Vector2<T>, b: &Self) -> f32 {
+    pub fn distance(p: Vector2<T>, b: &Self) -> f32 {
         Self::distance_squared(p, b)
     }
 
-    fn empty(&self) -> bool {
+    pub fn empty(&self) -> bool {
         self.min_point.x >= self.max_point.x || self.min_point.y >= self.max_point.y
     }
 
-    fn degenerate(&self) -> bool {
+    pub fn degenerate(&self) -> bool {
         self.min_point.x >  self.max_point.x || self.min_point.y >= self.max_point.y
     }
 
@@ -134,7 +134,7 @@ impl<T: Num> Bounds<T, Vector2<T>> {
 
 impl<T: Num> Bounds<T, Vector3<T>> {
     
-    fn corner(&self, c: usize) -> Vector3<T> {
+    pub fn corner(&self, c: usize) -> Vector3<T> {
         Vector3 {
             x: self[c & 1].x,
             y: self[c & 2].y,
@@ -142,25 +142,25 @@ impl<T: Num> Bounds<T, Vector3<T>> {
         }
     }
 
-    fn overlap(b1: &Self, b2: &Self) -> bool {
+    pub fn overlap(b1: &Self, b2: &Self) -> bool {
         b1.max_point.x >= b2.min_point.x && b1.min_point.x <= b2.max_point.x &&
         b1.max_point.y >= b2.min_point.y && b1.min_point.y <= b2.max_point.y &&
         b1.max_point.z >= b2.min_point.z && b1.min_point.z <= b2.max_point.z 
     }
 
-    fn inside(p: Vector3<T>, b: &Self) -> bool {
+    pub fn inside(p: Vector3<T>, b: &Self) -> bool {
         p.x >= b.min_point.x && p.x <= b.max_point.x &&
         p.y >= b.min_point.y && p.y <= b.max_point.y &&
         p.z >= b.min_point.z && p.z <= b.max_point.z
     }
 
-    fn inside_exclusive(p: Vector3<T>, b: &Self) -> bool {
+    pub fn inside_exclusive(p: Vector3<T>, b: &Self) -> bool {
         p.x >= b.min_point.x && p.x <= b.max_point.x &&
         p.y >= b.min_point.y && p.y <= b.max_point.y &&
         p.z >= b.min_point.z && p.z <= b.max_point.z
     }
 
-    fn distance_squared(p: Vector3<T>, b: &Self) -> f32 {
+    pub fn distance_squared(p: Vector3<T>, b: &Self) -> f32 {
         let minp = Vector::as_floats(b.min_point);
         let maxp = Vector::as_floats(b.max_point);
         let pf = Vector::as_floats(p);
@@ -170,16 +170,16 @@ impl<T: Num> Bounds<T, Vector3<T>> {
         square(dist_x) + square(dist_y) + square(dist_z)
     }
 
-    fn distance(p: Vector3<T>, b: &Self) -> f32 {
+    pub fn distance(p: Vector3<T>, b: &Self) -> f32 {
         Num::sqrt(Self::distance_squared(p, b))
     }
 
-    fn surface_area(b: &Self) -> T {
+    pub fn surface_area(b: &Self) -> T {
         let d = Self::diagonal(b);
         T::from_i32(2) * d.x * d.y + d.x * d.z + d.y * d.z
     }
 
-    fn max_dimension(b: &Self) -> usize {
+    pub fn max_dimension(b: &Self) -> usize {
         let d = Self::diagonal(b);
         if d.x > d.y && d.x > d.z {
             0
@@ -190,7 +190,7 @@ impl<T: Num> Bounds<T, Vector3<T>> {
         }
     }
 
-    fn bounding_sphere(&self) -> (Vector3<T>, f32) {
+    pub fn bounding_sphere(&self) -> (Vector3<T>, f32) {
         let center = (self.max_point + self.min_point) / T::from_i32(2);
         (
             center,
@@ -198,18 +198,18 @@ impl<T: Num> Bounds<T, Vector3<T>> {
         )
     }
 
-    fn empty(&self) -> bool {
+    pub fn empty(&self) -> bool {
         self.min_point.x >= self.max_point.x || self.min_point.y >= self.max_point.y || self.min_point.z >= self.max_point.z
     }
 
-    fn degenerate(&self) -> bool {
+    pub fn degenerate(&self) -> bool {
         self.min_point.x >  self.max_point.x || self.min_point.y >= self.max_point.y || self.min_point.z > self.max_point.z
     }
 
 }
 
 impl Bounds<i32, Vector2<i32>> {
-    fn distance_squared_int(p: Vector2<i32>, b: &Self) -> i32 {
+    pub fn distance_squared_int(p: Vector2<i32>, b: &Self) -> i32 {
         let dist_x = Ord::max(0, Ord::max(b.min_point.x - p.x, p.x - b.max_point.x));
         let dist_y = Ord::max(0, Ord::max(b.min_point.y - p.y, p.y - b.max_point.y));
         square(dist_x) + square(dist_y)
@@ -217,7 +217,7 @@ impl Bounds<i32, Vector2<i32>> {
 }
 
 impl Bounds<i32, Vector3<i32>> {
-    fn distance_squared_int(p: Vector3<i32>, b: &Self) -> i32 {
+    pub fn distance_squared_int(p: Vector3<i32>, b: &Self) -> i32 {
         let dist_x = Ord::max(0, Ord::max(b.min_point.x - p.x, p.x - b.max_point.x));
         let dist_y = Ord::max(0, Ord::max(b.min_point.y - p.y, p.y - b.max_point.y));
         let dist_z = Ord::max(0, Ord::max(b.min_point.z - p.z, p.z - b.max_point.z));
@@ -226,7 +226,7 @@ impl Bounds<i32, Vector3<i32>> {
 }
 
 impl Bounds<f32, Vector3f> {
-    fn lerp(&self, t: Vector3f) -> Vector3f {
+    pub fn lerp(&self, t: Vector3f) -> Vector3f {
         Vector3f {
             x: math::lerp(t.x, self.min_point.x, self.max_point.x),
             y: math::lerp(t.y, self.min_point.y, self.max_point.y),
@@ -236,7 +236,7 @@ impl Bounds<f32, Vector3f> {
 
     /// Gives the [0, 1] ratio of how far the given point is across the bounding box in each dimension (i.e. the inverse of lerp).
     /// Should generally only be used after verifying that the given point is actually inside of the bounding box (`inside`.)
-    fn offset(&self, p: Vector3f) -> Vector3f {
+    pub fn offset(&self, p: Vector3f) -> Vector3f {
         let mut o = p - self.min_point;
         if self.max_point.x > self.min_point.x {
             o.x /= self.max_point.x - self.min_point.x;
@@ -268,4 +268,4 @@ impl<T: Num, V: Vector<T>> Index<usize> for Bounds<T, V> {
 pub type Bounds2i = Bounds<i32, Vector2i>;
 pub type Bounds2f = Bounds<f32, Vector2f>;
 pub type Bounds3i = Bounds<i32, Vector3i>;
-pub type BOunds3f = Bounds<f32, Vector3f>;
+pub type Bounds3f = Bounds<f32, Vector3f>;

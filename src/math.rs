@@ -425,3 +425,11 @@ pub fn eval_polynomial(t: f32, c: &[f32]) -> f32 {
     }
     Num::fma(t, eval_polynomial(t, &c[1..]), c[0])
 }
+
+pub fn radians(deg: f32) -> f32 {
+    (PI / 180.0) * deg
+}
+
+pub fn degrees(rad: f32) -> f32 {
+    (180.0 / PI) * rad
+}

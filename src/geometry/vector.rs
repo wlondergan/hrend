@@ -1,6 +1,7 @@
-use crate::math::{arcsin, eval_polynomial, safe_sqrt, square, Num};
+use crate::math::{arccos, arcsin, degrees, eval_polynomial, safe_sqrt, square, Num};
 use std::{f32::consts::PI, ops::{Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign}};
 use std::mem;
+use super::bounds::Bounds3f;
 
 trait VecOps<T: Num, Rhs = Self, Output = Self>: 
     Add<Rhs, Output = Output> + Sub<Rhs, Output = Output> + 
@@ -761,5 +762,81 @@ pub fn wrap_equal_area_square(uv: Vector2f) -> Vector2f {
         uv.y = 2.0 - uv.y;
     }
     uv
+}
+
+#[derive(Clone, Copy)]
+pub struct DirectionCone {
+    pub w: Vector3f,
+    pub cos_theta: f32
+}
+
+impl DirectionCone {
+
+    pub fn default() -> Self {
+        DirectionCone{w: Vector3f::default(), cos_theta: f32::INFINITY}
+    }
+
+    pub fn new(w: Vector3f, cos_theta: f32) -> Self {
+        Self {w, cos_theta}
+    }
+
+    pub fn from_direction(w: Vector3f) -> Self {
+        Self {w, cos_theta: 1.0}
+    }
+
+    pub fn empty(&self) -> bool {
+        self.cos_theta == f32::INFINITY
+    }
+
+    pub fn all_directions() -> Self {
+        Self::new(Vector3f::new(0.0, 0.0, 1.0), -1.0)
+    }
+
+    pub fn inside(d: &Self, w: Vector3f) -> bool {
+        !d.empty() && Vector::dot(d.w, Vector::normalize(w)) >= d.cos_theta
+    }
+
+    /// Gives a DirectionCone which bounds the subtended angle by the given bounding box,
+    /// specifically from the reference point of the given point.
+    pub fn bound_directions(b: &Bounds3f, p: Vector3f) -> Self {
+        let (center, radius) = b.bounding_sphere();
+        if Vector::distance_squared(p, center) < square(radius) {
+            return Self::all_directions();
+        }
+        let w = Vector::normalize(center - p);
+        let sin2_theta_extent = square(radius) / Vector::distance_squared(center, p);
+        let cos_theta_extent = safe_sqrt(1.0 - sin2_theta_extent);
+        Self::new(w, cos_theta_extent)
+    }
+
+    pub fn union(a: &Self, b: &Self) -> Self {
+        if a.empty() {
+            return *b;
+        } else if b.empty() {
+            return *a;
+        }
+
+        let theta_a = arccos(a.cos_theta);
+        let theta_b = arccos(b.cos_theta);
+        let theta_d = Vector::angle_between(a.w, b.w);
+        if f32::min(theta_d + theta_b, PI) <= theta_a {
+            return *a;
+        }
+        if f32::min(theta_d + theta_a, PI) <= theta_b {
+            return *b;
+        }
+
+        let theta_o = (theta_a + theta_d + theta_b) / 2.0;
+        if theta_o >= PI {
+            return Self::all_directions();
+        }
+        let theta_r = theta_o - theta_a;
+        let w_r = Vector3::cross(a.w, b.w);
+        if Vector::length_squared(w_r) == 0.0 {
+            return Self::all_directions();
+        }
+        let w = Transform::rotate(degrees(theta_r), w_r).app(a.w);
+        Self::new(w, f32::cos(theta_o))
+    }
 }
 
