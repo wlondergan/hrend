@@ -303,6 +303,37 @@ pub const fn next_down(x: f32) -> f32 {
     f32::from_bits(next_bits)
 }
 
+/// Computes the product of the two given numbers, where the first return value
+/// is the return value and the second is the error incurred.
+fn compensated_prod(a: f32, b: f32) -> (f32, f32) {
+    (a * b, f32::fma(a, b, -(a * b)))
+}
+
+fn compensated_sum(a: f32, b: f32) -> (f32, f32) {
+    let s = a + b;
+    let delta = s - a;
+    (s, (a - (s - delta)) + (b - delta))
+}
+
+pub fn compensated_inner_prod(a: &[f32]) -> (f32, f32) {
+    debug_assert!(a.len() >= 2 && a.len() % 2 == 0);
+    if a.len() == 2 {
+        return compensated_prod(a[0], a[1]);
+    } else if a.len() == 1 {
+        return (a[0], 0.0);
+    }
+
+    let (ab_v, ab_err) = compensated_prod(a[0], a[1]);
+    let (tp_v, tp_err) = compensated_inner_prod(&a[2..]);
+    let (sum_v, sum_err) = compensated_sum(ab_v, tp_v);
+    (sum_v, ab_err + (tp_err + sum_err))
+}
+
+pub fn inner_prod(a: &[f32]) -> f32 {
+    let (res, err) = compensated_inner_prod(a);
+    res + err
+}
+
 /// Computes the (solid angle) area of the spherical triangle with vertices given by `a`, `b`, and `c`.
 pub fn spherical_triangle_area(a: Vector3f, b: Vector3f, c: Vector3f) -> f32 {
     f32::abs(2.0 * f32::atan2(Vector3f::dot(a, Vector3f::cross(b, c)), 

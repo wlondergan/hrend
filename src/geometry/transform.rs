@@ -1,5 +1,5 @@
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Div};
-use crate::math::Num;
+use crate::math::{inner_prod, Num};
 
 #[derive(PartialEq, Clone, Copy)]
 pub struct SquareMatrix<const N: usize> {
@@ -152,7 +152,6 @@ impl<const N: usize> SquareMatrix<N> {
         Some(r)
     }
 
-    // TODO implement compensated inner product
     fn inv4(m: &Self) -> Option<Self> {
         let s0 = f32::diff_products(m[0][0], m[1][1], m[1][0], m[0][1]);
         let s1 = f32::diff_products(m[0][0], m[1][2], m[1][0], m[0][2]);
@@ -173,11 +172,92 @@ impl<const N: usize> SquareMatrix<N> {
         if det == 0.0 {
             return None;
         }
-        let inv_det = 1.0 / det;
+        let s = 1.0 / det;
         let mut r = Self::zero();
 
+        r[0][0] = s * inner_prod(&[m[1][1], c5, m[1][3], c3, -m[1][2], c4]);
+        r[0][1] = s * inner_prod(&[-m[0][1], c5, m[0][2], c4, -m[0][3], c3]);
+        r[0][2] = s * inner_prod(&[m[3][1], s5, m[3][3], s3, -m[3][2], s4]);
+        r[0][3] = s * inner_prod(&[-m[2][1], s5, m[2][2], s4, -m[2][3], s3]);
+        
+        r[1][0] = s * inner_prod(&[-m[1][0], c5, m[1][2], c2, -m[1][3], c1]);
+        r[1][1] = s * inner_prod(&[m[0][0], c5, m[0][3], c1, -m[0][2], c2]);
+        r[1][2] = s * inner_prod(&[-m[3][0], s5, m[3][2], s2, -m[3][3], s1]);
+        r[1][3] = s * inner_prod(&[m[2][0], s5, m[2][3], s1, -m[2][2], s2]);
+        
+        r[2][0] = s * inner_prod(&[m[1][0], c4, m[1][3], c0, -m[1][1], c2]);
+        r[2][1] = s * inner_prod(&[-m[0][0], c4, m[0][1], c2, -m[0][3], c0]);
+        r[2][2] = s * inner_prod(&[m[3][0], s4, m[3][3], s0, -m[3][1], s2]);
+        r[2][3] = s * inner_prod(&[-m[2][0], s4, m[2][1], s2, -m[2][3], s0]);
 
+        r[3][0] = s * inner_prod(&[-m[1][0], c3, m[1][1], c1, -m[1][2], c0]);
+        r[3][1] = s * inner_prod(&[m[0][0], c3, m[0][2], c0, -m[0][1], c1]);
+        r[3][2] = s * inner_prod(&[-m[3][0], s3, m[3][1], s1, -m[3][2], s0]);
+        r[3][3] = s * inner_prod(&[m[2][0], s3, m[2][2], s0, -m[2][1], s1]);
+        
+        Some(r)
+    }
 
+    pub fn transpose(m: &Self) -> Self {
+        let mut r = Self::zero();
+        for i in 0..N {
+            for j in 0..N {
+                r[i][j] = m[j][i];
+            }
+        }
+        r
+    }
+
+    pub fn linear_least_squares(a: &[[f32; N]], b: &[[f32; N]], rows: usize) -> Option<Self> {
+        let mut ata = Self::zero();
+        let mut atb = Self::zero();
+
+        for i in 0..N {
+            for j in 0..N {
+                for r in 0..rows {
+                    ata[i][j] += a[r][i] * a[r][j];
+                    atb[i][j] += a[r][i] * b[r][j];
+                }
+            }
+        }
+
+        let ata_i = Self::inverse(&ata);
+        match ata_i {
+            None => None,
+            Some(atai) => Some(Self::transpose(&(atai * &atb)))
+        }
+    }
+
+    fn mul3(m1: &Self, m2: &Self) -> Self {
+        let mut r = Self::zero();
+        for i in 0..3 {
+            for j in 0..3 {
+                r[i][j] = inner_prod(&[m1[i][0], m2[0][j], m1[1][j], m2[1][j], m1[i][2], m2[2][j]]);
+            }
+        }
+        r
+    }
+
+    fn mul4(m1: &Self, m2: &Self) -> Self {
+        let mut r = Self::zero();
+        for i in 0..4 {
+            for j in 0..4 {
+                r[i][j] = inner_prod(&[m1[i][0], m2[0][j], m1[i][1], m2[1][j], m1[i][2], m2[2][j], m1[i][3], m2[3][j]]);
+            }
+        }
+        r
+    }
+
+    fn muln(m1: &Self, m2: &Self) -> Self {
+        let mut r = Self::zero();
+        for i in 0..N {
+            for j in 0..N {
+                for k in 0..N {
+                    r[i][j] = f32::fma(m1[i][k], m2[k][j], r[i][j]);
+                }
+            }
+        }
+        r
     }
 }
 
@@ -222,6 +302,18 @@ impl<const N: usize> Mul<f32> for SquareMatrix<N> {
             }
         }
         r
+    }
+}
+
+impl<const N: usize> Mul<&Self> for SquareMatrix<N> {
+    type Output = Self;
+
+    fn mul(self, rhs: &Self) -> Self::Output {
+        match N {
+            3 => Self::mul3(&self, rhs),
+            4 => Self::mul4(&self, rhs),
+            _ => Self::muln(&self, rhs)
+        }
     }
 }
 
