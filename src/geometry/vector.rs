@@ -1,7 +1,8 @@
 use crate::math::{arccos, arcsin, degrees, eval_polynomial, safe_sqrt, square, Num};
-use std::{f32::consts::PI, ops::{Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign}};
+use std::{f32::consts::PI, ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign}};
 use std::mem;
 use super::bounds::Bounds3f;
+use crate::geometry::transform::Transform;
 
 trait VecOps<T: Num, Rhs = Self, Output = Self>: 
     Add<Rhs, Output = Output> + Sub<Rhs, Output = Output> + 
@@ -476,6 +477,17 @@ impl<T: Num> Index<usize> for Vector3<T> {
     }
 }
 
+impl<T: Num> IndexMut<usize> for Vector3<T> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            _ => panic!("Index out of bounds in Vector3")
+        }
+    }
+}
+
 impl<T: Num> Vector<T> for Vector3<T> {
     type FloatType = Vector3<f32>;
 
@@ -835,7 +847,7 @@ impl DirectionCone {
         if Vector::length_squared(w_r) == 0.0 {
             return Self::all_directions();
         }
-        let w = Transform::rotate(degrees(theta_r), w_r).app(a.w);
+        let w = Transform::rotate(degrees(theta_r), w_r) * a.w;
         Self::new(w, f32::cos(theta_o))
     }
 }

@@ -1,5 +1,8 @@
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Div};
-use crate::math::{inner_prod, Num};
+use crate::math::{inner_prod, Num, square};
+use crate::geometry::vector::Vector3f;
+
+use super::vector::{Vector, Vector3};
 
 #[derive(PartialEq, Clone, Copy)]
 pub struct SquareMatrix<const N: usize> {
@@ -259,6 +262,16 @@ impl<const N: usize> SquareMatrix<N> {
         }
         r
     }
+
+    pub fn nan() -> Self {
+        let mut r = Self::zero();
+        for i in 0..N {
+            for j in 0..N {
+                r[i][j] = f32::NAN;
+            }
+        }
+        r
+    }
 }
 
 impl<const N: usize> Index<usize> for SquareMatrix<N> {
@@ -317,6 +330,21 @@ impl<const N: usize> Mul<&Self> for SquareMatrix<N> {
     }
 }
 
+impl<const N: usize> Mul<Vector3f> for SquareMatrix<N> {
+    type Output = Vector3f;
+    
+    fn mul(self, rhs: Vector3f) -> Self::Output {
+        let mut res = Vector3f::new(0.0, 0.0, 0.0);
+        for i in 0..N {
+            res[i] = 0.0;
+            for j in 0..N {
+                res[i] += self.m[i][j] * rhs[j];
+            }
+        }
+        res
+    }
+}
+
 impl<const N: usize> Div<f32> for SquareMatrix<N> {
     type Output = Self;
 
@@ -330,8 +358,202 @@ impl<const N: usize> SquareMatrix<N> {
 
 }
 
-
-
+#[derive(PartialEq)]
 pub struct Transform {
-    m: SquareMatrix<4>
+    pub m: SquareMatrix<4>,
+    pub m_inv: SquareMatrix<4>
 }
+
+impl Transform {
+    pub fn default() -> Self {
+        Self {
+            m: SquareMatrix::ident(),
+            m_inv: SquareMatrix::ident()
+        }
+    }
+
+    pub fn new(m: &SquareMatrix<4>) -> Self {
+        match SquareMatrix::inverse(m) {
+            Some(m_inv) => Self {m: m.clone(), m_inv},
+            None => Self {m: m.clone(), m_inv: SquareMatrix::nan()}
+        }
+    }
+
+    pub fn from_array(m: [[f32;4];4]) -> Self {
+        Self::new(&SquareMatrix::new(m))
+    }
+
+    pub fn with_inv(m: &SquareMatrix<4>, m_inv: &SquareMatrix<4>) -> Self {
+        Self {
+            m: *m,
+            m_inv: *m_inv
+        }
+    }
+
+    pub fn invert(t: &Self) -> Self {
+        Self::with_inv(&t.m_inv, &t.m)
+    }
+
+    pub fn transpose(t: &Self) -> Self {
+        Self::with_inv(&SquareMatrix::transpose(&t.m), &SquareMatrix::transpose(&t.m_inv))
+    }
+
+    pub fn is_ident(t: &Self) -> bool {
+        t.m.is_ident()
+    }
+
+    pub fn translate(by: Vector3f) -> Self {
+        Self {
+            m: SquareMatrix::new(
+                [[1.0, 0.0, 0.0, by.x],
+                [0.0, 1.0, 0.0, by.y],
+                [0.0, 0.0, 1.0, by.z],
+                [0.0, 0.0, 0.0, 1.0]]),
+            m_inv: SquareMatrix::new(
+                [[1.0, 0.0, 0.0, by.x],
+                [0.0, 1.0, 0.0, by.y],
+                [0.0, 0.0, 1.0, by.z],
+                [0.0, 0.0, 0.0, 1.0]])
+        }
+    }
+
+    pub fn scale(by: Vector3f) -> Self {
+        Self {
+            m: SquareMatrix::new(
+                [[1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0]]),
+            m_inv: SquareMatrix::new(
+                [[1.0, 0.0, 0.0, by.x],
+                [0.0, 1.0, 0.0, by.y],
+                [0.0, 0.0, 1.0, by.z],
+                [0.0, 0.0, 0.0, 1.0]])
+        }
+    }
+
+    pub fn has_scaling(&self, tolerance: Option<f32>) -> bool {
+        const DEFAULT_TOL: f32 = 1.0e-3;
+
+        let la = Vector::length_squared(self.m * Vector3f::new(1.0, 0.0, 0.0));
+        let lb = Vector::length_squared(self.m * Vector3f::new(0.0, 1.0, 0.0));
+        let lc = Vector::length_squared(self.m * Vector3f::new(0.0, 0.0, 1.0));
+        let tol = match tolerance {
+            Some(t) => t,
+            None => DEFAULT_TOL
+        };
+        f32::abs(la - 1.0) > tol && f32::abs(lb - 1.0) > tol && f32::abs(lc - 1.0) > tol
+    }
+
+    pub fn rotate_x(theta: f32) -> Self {
+        let sin_theta = f32::sin(theta);
+        let cos_theta = f32::cos(theta);
+        let m = SquareMatrix::new(
+            [[1.0, 0.0, 0.0, 0.0],
+             [0.0, cos_theta, -sin_theta, 0.0],
+             [0.0, sin_theta, cos_theta, 0.0],
+             [0.0, 0.0, 0.0, 1.0]]);
+        Self::with_inv(&m, &SquareMatrix::transpose(&m))
+    }
+
+    pub fn rotate_y(theta: f32) -> Self {
+        let sin_theta = f32::sin(theta);
+        let cos_theta = f32::cos(theta);
+        let m = SquareMatrix::new(
+            [[cos_theta, 0.0, sin_theta, 0.0],
+             [0.0, 1.0, 0.0, 0.0],
+             [-sin_theta, 0.0, cos_theta, 0.0],
+             [0.0, 0.0, 0.0, 1.0]]);
+        Self::with_inv(&m, &SquareMatrix::transpose(&m))
+    }
+
+    pub fn rotate_z(theta: f32) -> Self {
+        let sin_theta = f32::sin(theta);
+        let cos_theta = f32::cos(theta);
+        let m = SquareMatrix::new(
+            [[cos_theta, -sin_theta, 0.0, 0.0],
+             [sin_theta, cos_theta, 0.0, 0.0],
+             [0.0, 0.0, 0.0, 0.0],
+             [0.0, 0.0, 0.0, 1.0]]);
+        Self::with_inv(&m, &SquareMatrix::transpose(&m))
+    }
+
+    /// Provides a rotation matrix which rotates about the given axis by the specified angle,
+    /// with the sin and cos of that angle already precalculated.
+    pub fn rotate_precalc(sin_theta: f32, cos_theta: f32, axis: Vector3f) -> Self {
+        let a = Vector::normalize(axis);
+        let mut m = SquareMatrix4::ident();
+        m[0][0] = square(a.x) + (1.0 - square(a.x)) * cos_theta;
+        m[0][1] = square(a.y) * (1.0 - cos_theta) - a.z * sin_theta;
+        m[0][2] = a.x * a.z * (1.0 - cos_theta) + a.y * sin_theta;
+        m[0][3] = 0.0;
+
+        m[1][0] = a.x * a.y * (1.0 - cos_theta) + a.z * sin_theta;
+        m[1][1] = square(a.y) + (1.0 - square(a.y)) * cos_theta;
+        m[1][2] = a.y * a.z * (1.0 - cos_theta) - a.x * sin_theta;
+        m[1][3] = 0.0;
+
+        m[2][0] = a.x * a.z * (1.0 - cos_theta) - a.y * sin_theta;
+        m[2][1] = a.y * a.z * (1.0 - cos_theta) + a.x * sin_theta;
+        m[2][2] = square(a.z) + (1.0 - square(a.z)) * cos_theta;
+        m[2][3] = 0.0;
+
+        Self::with_inv(&m, &SquareMatrix::transpose(&m))
+    }
+
+    pub fn rotate(theta: f32, axis: Vector3f) -> Self {
+        Self::rotate_precalc(f32::sin(theta), f32::cos(theta), axis)
+    }
+
+    pub fn rotate_from_to(from: Vector3f, to: Vector3f) -> Self {
+        const GT_SQRT2_ON_2: f32 = 0.72;
+
+        let refl = if f32::abs(from.x) < GT_SQRT2_ON_2 && f32::abs(to.x) < GT_SQRT2_ON_2 {
+            Vector3f::new(1.0, 0.0, 0.0)
+        } else if f32::abs(from.y) < GT_SQRT2_ON_2 && f32::abs(to.y) < GT_SQRT2_ON_2 {
+            Vector3f::new(0.0, 1.0, 0.0)
+        } else {
+            Vector3f::new(0.0, 0.0, 1.0)
+        };
+        let u = refl - from;
+        let v = refl - to;
+        let mut r = SquareMatrix4::ident();
+        for i in 0..3 {
+            for j in 0..3 {
+                r[i][j] = if i == j {1.0} else {0.0} -
+                    2.0 / Vector::dot(u, u) * u[i] * u[j] - 
+                    2.0 / Vector::dot(v, v) * v[i] * v[j] +
+                    4.0 * Vector::dot(u, v) / Vector::dot(u, u) * Vector::dot(v, v) * v[i] * u[j];
+            }
+        }
+        Self::with_inv(&r, &SquareMatrix::transpose(&r))
+    }
+
+    pub fn look_at(pos: Vector3f, look: Vector3f, up: Vector3f) -> Self {
+        let dir = Vector::normalize(look - pos);
+        let right = Vector::normalize(Vector3::cross(Vector::normalize(up), dir));
+        let new_up = Vector3::cross(dir, right);
+        let m_inv = SquareMatrix::new(
+            [[right.x, new_up.x, dir.x, pos.x],
+             [right.y, new_up.y, dir.y, pos.y],
+             [right.z, new_up.z, dir.z, pos.z],
+             [0.0, 0.0, 0.0, 1.0]]
+        )
+        let m = SquareMatrix::inverse(&m_inv).unwrap();
+
+        Self::with_inv(&m, &m_inv)
+    }
+
+}
+
+impl Eq for Transform {}
+
+impl Mul<Vector3f> for Transform {
+    type Output = Vector3f;
+    
+    fn mul(self, rhs: Vector3f) -> Self::Output {
+        unimplemented!()
+    }
+}
+
+type SquareMatrix4 = SquareMatrix<4>;
