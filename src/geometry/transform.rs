@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Div};
+use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Div, Fn};
 use crate::math::{inner_prod, Num, square};
 use crate::geometry::vector::Vector3f;
 
@@ -538,22 +538,43 @@ impl Transform {
              [right.y, new_up.y, dir.y, pos.y],
              [right.z, new_up.z, dir.z, pos.z],
              [0.0, 0.0, 0.0, 1.0]]
-        )
+        );
         let m = SquareMatrix::inverse(&m_inv).unwrap();
 
         Self::with_inv(&m, &m_inv)
+    }
+
+    /// Applies this transform to the given POINT vector, with homogeneous coordinates (x, y, z, 1).
+    /// For a DIRECTION vector, use the function `v` instead.
+    pub fn p<T: Num>(&self, point: Vector3<T>) -> Vector3<T> {
+        let pf = Vector::as_floats(point);
+        let xp = T::from_f32(self.m[0][0] * pf.x + self.m[0][1] * pf.y + self.m[0][2] * pf.z + self.m[0][3]);
+        let yp = T::from_f32(self.m[1][0] * pf.x + self.m[1][1] * pf.y + self.m[1][2] * pf.z + self.m[1][3]);
+        let zp = T::from_f32(self.m[2][0] * pf.x + self.m[2][1] * pf.y + self.m[2][2] * pf.z + self.m[2][3]);
+        let wp = T::from_f32(self.m[3][0] * pf.x + self.m[3][1] * pf.y + self.m[3][2] * pf.z + self.m[3][3]);
+        if wp == T::from_i32(1) {
+            Vector3::new(xp, yp, zp)
+        } else {
+            Vector3::new(xp, yp, zp) / wp
+        }
+    }
+
+    pub fn inv_p<T: Num>(&self, point: Vector3<T>) -> Vector3<T> {
+        let pf = Vector::as_floats(point);
+        let xp = T::from_f32(self.m_inv[0][0] * pf.x + self.m_inv[0][1] * pf.y + self.m_inv[0][2] * pf.z + self.m_inv[0][3]);
+        let yp = T::from_f32(self.m_inv[1][0] * pf.x + self.m_inv[1][1] * pf.y + self.m_inv[1][2] * pf.z + self.m_inv[1][3]);
+        let zp = T::from_f32(self.m_inv[2][0] * pf.x + self.m_inv[2][1] * pf.y + self.m_inv[2][2] * pf.z + self.m_inv[2][3]);
+        let wp = T::from_f32(self.m_inv[3][0] * pf.x + self.m_inv[3][1] * pf.y + self.m_inv[3][2] * pf.z + self.m_inv[3][3]);
+        if wp == T::from_i32(1) {
+            Vector3::new(xp, yp, zp)
+        } else {
+            Vector3::new(xp, yp, zp) / wp
+        }
     }
 
 }
 
 impl Eq for Transform {}
 
-impl Mul<Vector3f> for Transform {
-    type Output = Vector3f;
-    
-    fn mul(self, rhs: Vector3f) -> Self::Output {
-        unimplemented!()
-    }
-}
 
 type SquareMatrix4 = SquareMatrix<4>;
