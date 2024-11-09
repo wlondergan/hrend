@@ -627,8 +627,6 @@ pub type Vector2i = Vector2<i32>;
 pub type Vector3f = Vector3<f32>;
 pub type Vector3i = Vector3<i32>;
 
-pub type Normal3f = Vector3f;
-
 /// Encodes the rotation of a Vector3f projected onto the unit sphere using two `u16`, with a mapping from the unit 
 /// sphere projected onto an octahedron. Use `Vector3f as OctahedralVector` or `OctahedralVector as Vector3f` to achieve
 /// this conversion.

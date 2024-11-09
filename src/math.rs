@@ -98,7 +98,8 @@ pub fn safe_sqrt(f: f32) -> f32 {
 pub trait Num: 
     Add<Self, Output = Self> + Sub<Self, Output = Self> + 
     Mul<Self, Output = Self> + Div<Self, Output = Self> + 
-    Copy + Neg<Output=Self> + PartialOrd { 
+    Copy + Neg<Output=Self> + PartialOrd + 
+    Mul<i32, Output = Self> + Mul<f32, Output = Self> { 
     fn is_nan(a: Self) -> bool;
     fn sqrt(a: Self) -> f32;
     fn ceil(a: Self) -> Self;
@@ -179,6 +180,28 @@ impl Num for i32 {
     
     fn from_i32(x: i32) -> Self {
         x
+    }
+    
+    fn diff_products(a: Self, b: Self, c: Self, d: Self) -> Self {
+        let cd = c * d;
+        let diff_prod = Num::fma(a, b, -cd);
+        let err = Num::fma(-c, d, cd);
+        diff_prod + err
+    }
+    
+    fn sum_products(a: Self, b: Self, c: Self, d: Self) -> Self {
+        let cd = c * d;
+        let sum_prod = Num::fma(a, b, cd);
+        let err = Num::fma(c, d, -cd);
+        sum_prod + err
+    }
+}
+
+impl Mul<f32> for i32 {
+    type Output = i32;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        todo!()
     }
 }
 
